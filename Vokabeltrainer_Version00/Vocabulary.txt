@@ -1,0 +1,57 @@
+le portrait robot	Phantombild	1
+grand	groß	1
+petit	klein	1
+blond	blond	1
+brun	braun	1
+d'accord	okay, einverstanden	1
+avoir des lunettes	eine Brille tragen	1
+les lunettes (feminin)	Brille	1
+pas de	kein/e	1
+ne pas	nicht	1
+le vetement	Kleidungsstück	1
+porter	tragen	1
+le tee-shirt	T-Shirt	1
+blanc/blanche	weiß	1
+le pantalon	Hose	1
+noir	schwarz	1
+le jean	Jeans	1
+lui	er (betont)	1
+de quelle coleur?	Welcher Farbe?	1
+la coleur	Farbe	1
+autre chose	etwas anderes, noch etwas	1
+la chose	Sache, Ding	1
+la chemise	Hemd	1
+ses	seine/ihre (Plural)	1
+les chaussures (feminin)	Schuhe	1
+les baskets (feminin)	Sportschuhe	1
+observer	betrachten, sich etwas genau ansehen	1
+la description	Beschreibung	1
+le pronom tonique	betontes Personalpronomen	1
+toi	du (betont); dir	1
+elle	sie (betont); ihr	1
+vous	ihr, Sie (betont); euch, Ihnen	1
+la negation	Verneinung	1
+entourer	umschließen	1
+la forme negative	verneinende Form	1
+la forme	Form	1
+negatif/-ive	negativ, verneinend	1
+l'accord	Übereinstimmung	1
+la robe	Kleid	1
+identique	gleich, identisch	1
+mes	meine  (Plural)	1
+tes	deine (Plural)	1
+nos	unsere (Plural)	1
+vos	eure; Ihre (Plural)	1
+leur(s)	ihr(e)	1
+exprimer	ausdrücken	1
+la possession 	Besitz	1
+bon/ne	richtig	1
+la reponse	Antwort	1
+poser une question	eine Frage stellen	1
+le pull	Pullover	1
+jaune	gelb	1
+la classe	Klasse	1
+la devinette	Rätsel	1
+deviner	raten, erraten	1
+la liaison	Verbindung	1
+faire les liaisons	die W�rter verbinden	1
