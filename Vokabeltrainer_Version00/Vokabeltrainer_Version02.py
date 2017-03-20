@@ -52,7 +52,8 @@ def import_data(input_file):
                     print ("Line not imported.")
                     continue
 
-    print (french_german)
+    for entry in french_german:
+        print (entry) 
 
 import_data("Vocabulary.txt")
 ############################# importing dictionary ############################
