@@ -11,6 +11,7 @@ import sys
 import numpy
 
 # TODO: "Trotzdem Richtig" - Button einführen
+# TODO: "Abfrage Starten" - Button einführen
 # TODO: Vokabelliste in zweiten Tab einfügen
 # TODO: Level richtig aktualisieren
 #           - bei richtigen Antworten    -----   DONE
@@ -27,7 +28,7 @@ french_german = {}
 app = QApplication(sys.argv)
 
 ##################### importing the file made by qt designer ##################
-widget = loadUi("vokabeln_gui00.ui")
+widget = loadUi("Vokabeln_GUI.ui")
 
 ################################# Functions ###################################
 
@@ -49,11 +50,14 @@ def import_data(input_file):
                     french_german[str(word_list[0])] = [word_list[1],
                                                             level.strip("\n")]
                 except:
-                    print ("Line not imported.")
+                    print ("Word not imported.")
                     continue
 
     for entry in french_german:
-        print (entry) 
+        liste = french_german[entry]
+        german_word = liste[0]
+        level = liste[1]
+        print ('{}\t{}\t{}'.format(entry, german_word, level))
 
 import_data("Vocabulary.txt")
 ############################# importing dictionary ############################
@@ -83,7 +87,6 @@ def get_next_word():
 
     return french[e]
 
-
 def check_entry(word1, word2, word3):
     '''
     Returns True if the word1 and word2 are a key-value-pair and False if not.
@@ -91,6 +94,7 @@ def check_entry(word1, word2, word3):
     # extract correct word from the list in dictionary according to
     # first line edit -- second language -- correct word
     word1 = str(word1[0])
+    word1 = word1.strip('\t')
     # the word in second line edit -- second language -- tested word
     word2 = str(word2)
     # the respective word in - first language
@@ -115,9 +119,18 @@ def check_entry(word1, word2, word3):
     else:
         print (False)
         widget.label.setText("Leider Falsch!")
+        widget.label_4.setText(word1)
         widget.lineEdit_2.setFocus()
         widget.lineEdit_2.selectAll()
         return False
+
+def export_data():
+    with open('Vocabulary.txt', 'w') as outputfile:
+        for entry in french_german:
+            liste = french_german[entry]
+            german_word = liste[0]
+            level = liste[1]
+            outputfile.write('{}\t{}\t{}\n'.format(entry, german_word, level))
 
 
 # set text of text labels for language 1 and language 2
@@ -138,10 +151,19 @@ else:
     if widget.pushButton.clicked or widget.pushButton.returnPressed:
         widget.pushButton.clicked.connect(get_next_word)
 
+        # Level aktualisieren TODO bleibt nach einem stecken --> reparieren
+        values = french_german[widget.lineEdit_1.text()]
+        level = int(values[1])
+        french_german[widget.lineEdit_1.text()] = [widget.lineEdit_2.text()
+                                                            , level + 1]
+
 
 # close the widget with shortcut (ESCAPE KEY)
 shortcut = QShortcut(QKeySequence(Qt.Key_Escape), widget)
 shortcut.activated.connect(widget.close)
+
+# make action when user closes the app
+# app.aboutToQuit.connect(export_data)
 
 # start widget
 widget.show()
