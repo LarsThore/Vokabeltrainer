@@ -28,7 +28,8 @@ french_german = {}
 app = QApplication(sys.argv)
 
 ##################### importing the file made by qt designer ##################
-widget = loadUi("Vokabeln_GUI.ui")
+widget_ = loadUi("Vokabeln_GUI.ui")
+print (type(widget_))
 
 ################################# Functions ###################################
 
@@ -75,15 +76,15 @@ def get_next_word():
     e = numpy.random.randint(len(french_german))
 
     # fill the first text-edit-box with a word from the dictionary
-    widget.lineEdit_1.setText(french[e])
+    widget_.lineEdit_1.setText(french[e])
 
     # show the level value
     values = french_german[french[e]]
     level_text = str(values[1])
-    widget.label_level.setText(level_text)
+    widget_.label_level.setText(level_text)
 
     # set focus on second line edit
-    widget.lineEdit_2.setFocus()
+    widget_.lineEdit_2.setFocus()
 
     return french[e]
 
@@ -104,12 +105,12 @@ def check_entry(word1, word2, word3):
 
     if word1 == word2:
         print (True)
-        widget.label.setText("Richtig!")
+        widget_.label.setText("Richtig!")
         get_next_word()
 
         # Textfelder neu einrichten
-        widget.lineEdit_2.clear()
-        widget.lineEdit_2.setFocus()
+        widget_.lineEdit_2.clear()
+        widget_.lineEdit_2.setFocus()
 
         # Level aktualisieren
         values = french_german[word3]
@@ -118,10 +119,10 @@ def check_entry(word1, word2, word3):
         return True
     else:
         print (False)
-        widget.label.setText("Leider Falsch!")
-        widget.label_4.setText(word1)
-        widget.lineEdit_2.setFocus()
-        widget.lineEdit_2.selectAll()
+        widget_.label.setText("Leider Falsch!")
+        widget_.label_4.setText(word1)
+        widget_.lineEdit_2.setFocus()
+        widget_.lineEdit_2.selectAll()
         return False
 
 def export_data():
@@ -134,37 +135,50 @@ def export_data():
 
 
 # set text of text labels for language 1 and language 2
-widget.label_1.setText("   Französisch")
-widget.label_2.setText("   Deutsch")
-
-# write certain word into the first line edit field
-word = get_next_word()
-
-# after entering the word check (with function) if entry was correct
-answer = widget.lineEdit_2.returnPressed.connect(lambda:
-    check_entry(french_german[widget.lineEdit_1.text()],
-                widget.lineEdit_2.text(), widget.lineEdit_1.text()))
-
-if answer == True:
-    pass
-else:
-    if widget.pushButton.clicked or widget.pushButton.returnPressed:
-        widget.pushButton.clicked.connect(get_next_word)
-
-        # Level aktualisieren TODO bleibt nach einem stecken --> reparieren
-        values = french_german[widget.lineEdit_1.text()]
-        level = int(values[1])
-        french_german[widget.lineEdit_1.text()] = [widget.lineEdit_2.text()
-                                                            , level + 1]
+widget_.label_1.setText("   Französisch")
+widget_.label_2.setText("   Deutsch")
 
 
-# close the widget with shortcut (ESCAPE KEY)
-shortcut = QShortcut(QKeySequence(Qt.Key_Escape), widget)
-shortcut.activated.connect(widget.close)
+def handle_actions(self, event):
+    print (event.type())
+    # write certain word into the first line edit field
+    word = get_next_word()
 
-# make action when user closes the app
-# app.aboutToQuit.connect(export_data)
+    # after entering the word check (with function) if entry was correct
+    answer = widget_.lineEdit_2.returnPressed.connect(lambda:
+        check_entry(french_german[widget_.lineEdit_1.text()],
+                    widget_.lineEdit_2.text(), widget_.lineEdit_1.text()))
 
-# start widget
-widget.show()
-sys.exit(app.exec_())
+    if answer == True:
+        pass
+    else:
+        if widget_.pushButton.clicked or widget_.pushButton.returnPressed:
+            widget_.pushButton.clicked.connect(get_next_word)
+
+            # Level aktualisieren TODO bleibt nach einem stecken --> reparieren
+            values = french_german[widget_.lineEdit_1.text()]
+            level = int(values[1])
+            french_german[widget_.lineEdit_1.text()] = [
+                                widget_.lineEdit_2.text(), level + 1]
+
+
+    # close the widget_ with shortcut (ESCAPE KEY)
+    shortcut = QShortcut(QKeySequence(Qt.Key_Escape), widget_)
+    shortcut.activated.connect(widget_.close)
+
+    # make action when user closes the app
+    # app.aboutToQuit.connect(export_data)
+
+    return True
+
+if __name__ == '__main__':
+    # ersetze die Funktion, die die Ereignisse behandelt durch
+    # selbst-definierte Funktion
+    widget_.centralWidget.event = MethodType(handle_actions,
+       widget_.centralWidget)
+
+    # handle_actions()
+
+    # start widget_
+    widget_.show()
+    sys.exit(app.exec_())

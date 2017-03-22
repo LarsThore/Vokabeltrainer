@@ -246,8 +246,8 @@ def drawing(self, event):
         imgpainter.drawImage(0, 0, img)
         imgpainter.end()
 
-    return True                                 # return 'True' so that the event handler
-                                                # knows that the event is completed
+    return True                     # return 'True' so that the event handler
+                                    # knows that the event is completed
 
 
 def erase():
