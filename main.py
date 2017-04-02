@@ -35,14 +35,13 @@ logger = logging.getLogger(name = 'main-gui')
 
 
 
+class Main(QMainWindow, pymainWindow.Ui_MainWindow):
+    '''Class inherits from Qt.QMainWindow class and from class built by the
+    QtDesigner'''
 
-class Main(QMainWindow, pymainWindow.Ui_mainWindow):
-
-    # make Database path
+    # make Database path for table containing the vocabulary
     dbPath = appDataPath + 'pydata.db'
     dbConn = sqlite3.connect(dbPath)
-
-
 
     def __init__(self, parent = None):
         super(Main, self).__init__(parent)
@@ -51,8 +50,7 @@ class Main(QMainWindow, pymainWindow.Ui_mainWindow):
         # create table in database
         self.dbCursor = self.dbConn.cursor()
         self.dbCursor.execute('''CREATE TABLE IF NOT EXISTS Main(id INTEGER\
-            PRIMARY KEY, username TEXT, name TEXT, phone TEXT, address TEXT, \
-            status TEXT)''')
+            PRIMARY KEY, language_one TEXT, language_two TEXT, level TEXT)''')
 
         # save changes to database
         self.dbConn.commit()
@@ -61,8 +59,8 @@ class Main(QMainWindow, pymainWindow.Ui_mainWindow):
         self.settings = QSettings(QSettings.IniFormat, QSettings.UserScope,
             'PyDataManager', 'PyDataManager')
 
-        self.addData.clicked.connect(self.add_button_clicked)
-        self.removeRow.clicked.connect(self.remove_row_clicked)
+        self.addVocButton.clicked.connect(self.add_button_clicked)
+        self.removeRowButton.clicked.connect(self.remove_row_clicked)
 
         self.load_initial_settings()
 
@@ -79,39 +77,36 @@ class Main(QMainWindow, pymainWindow.Ui_mainWindow):
             # insert a QTableWidgetItem in the table
             self.mainTable.setItem(inx, 0, QTableWidgetItem(row[1]))
             self.mainTable.setItem(inx, 1, QTableWidgetItem(row[2]))
-            self.mainTable.setItem(inx, 2, QTableWidgetItem(row[3]))
-            self.mainTable.setItem(inx, 3, QTableWidgetItem(row[4]))
-            self.mainTable.setItem(inx, 4, QTableWidgetItem(row[5]))
+            self.mainTable.setItem(inx, 2, QTableWidgetItem(str(row[3])))
 
     def add_button_clicked(self):
         '''Calls the validate_fields method and adds the items to the table
         if true. '''
-        username = self.userName.text()
-        first_name = self.firstName.text()
-        phone_number = self.phoneNumber.text()
-        address = self.address.text()
-        approved = self.approved.isChecked()
+        voc1 = self.voc1LineEdit.text()
+        voc2 = self.voc2LineEdit.text()
+
+        initLevel = str(1)
 
         # check if field entry has correct structure
-        if not self.validate_fields():
-            return False
+        # if not self.validate_fields():
+        #     return False
 
         currentRowCount = self.mainTable.rowCount()
 
         self.mainTable.insertRow(currentRowCount)
-        self.mainTable.setItem(currentRowCount, 0, QTableWidgetItem(username))
-        self.mainTable.setItem(currentRowCount, 1, QTableWidgetItem(first_name))
-        self.mainTable.setItem(currentRowCount, 2, QTableWidgetItem(phone_number))
-        self.mainTable.setItem(currentRowCount, 3, QTableWidgetItem(address))
-        self.mainTable.setItem(currentRowCount, 4, QTableWidgetItem(
-         'Approved' if approved else 'Not approved'))
+        self.mainTable.setItem(currentRowCount, 0, QTableWidgetItem(voc1))
+        self.mainTable.setItem(currentRowCount, 1, QTableWidgetItem(voc2))
+        self.mainTable.setItem(currentRowCount, 2, QTableWidgetItem(initLevel))
 
         # commit changes to Database
-        parameters = (None, username, first_name, phone_number, address,
-         str(approved))
-        self.dbCursor.execute('''INSERT INTO Main VALUES (?, ?, ?, ?, ?, ?)''',
+        parameters = (None, voc1, voc2, str(initLevel))
+        self.dbCursor.execute('''INSERT INTO Main VALUES (?, ?, ?, ?)''',
          parameters)
         self.dbConn.commit()
+
+        self.voc1LineEdit.clear()
+        self.voc2LineEdit.clear()
+        self.voc1LineEdit.setFocus()
 
     def remove_row_clicked(self):
         '''Removes the selected row from the mainTable.'''
@@ -121,9 +116,9 @@ class Main(QMainWindow, pymainWindow.Ui_mainWindow):
         # if any row is selected
         if currentRow > -1:
             # make a tuple because sqlite needs a tuple as input
-            currentUsername = (self.mainTable.item(currentRow, 0).text(), )
-            self.dbCursor.execute('''DELETE FROM Main WHERE username = ?''',
-             currentUsername)
+            currentVoc = (self.mainTable.item(currentRow, 0).text(), )
+            self.dbCursor.execute('''DELETE FROM Main WHERE Language_One = ?''',
+             currentVoc)
             self.dbConn.commit()
             self.mainTable.removeRow(currentRow)
 
