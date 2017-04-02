@@ -67,6 +67,7 @@ import_data("Vocabulary.txt")
 french = list(french_german.keys())
 
 
+
 def get_next_word():
     '''
     Chooses a word from the dictionary (keys) and writes it into the first
