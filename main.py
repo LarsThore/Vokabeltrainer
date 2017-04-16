@@ -10,9 +10,17 @@ import re
 import sys
 import os
 import logging
+import csv
 
 from ui_files import pymainWindow
 import sqlite3
+
+# TODO: Level richtig speichern
+# TODO: Tooltipps einfügen
+# TODO: Make Widget stretchable
+# TODO: mehr Wörter der unteren Level auswählen
+# TODO: Funktion/Programm zum Importieren von Vokabellisten einfügen
+
 
 # set the default path of the application to HOME/AppDataManager directory
 # (soft-coding)
@@ -26,26 +34,34 @@ if not os.path.exists(appDataPath):
         appDataPath = os.getcwd()
 
 # Logging; format
-logging.basicConfig(filename= appDataPath + 'pydatamanager.log',
+logging.basicConfig(filename= appDataPath + 'pyvoctrainer.log',
     format = '%(asctime)-15s: %(name)-18s - %(levelname)-8s - %(module)-15s\
-     - %(funcname)-15s - %(lineno)-6d - %(message)s')
+     - %(funcName)-15s - %(lineno)-6d - %(message)s')
 
 # define the module name in the basic Configuration
 logger = logging.getLogger(name = 'main-gui')
-
-
 
 class Main(QMainWindow, pymainWindow.Ui_MainWindow):
     '''Class inherits from Qt.QMainWindow class and from class built by the
     QtDesigner'''
 
     # make Database path for table containing the vocabulary
-    dbPath = appDataPath + 'pydata.db'
+    dbPath = appDataPath + 'pyvoc.db'
     dbConn = sqlite3.connect(dbPath)
 
     def __init__(self, parent = None):
         super(Main, self).__init__(parent)
         self.setupUi(self)
+
+        # set items for table
+        self.item1 = self.mainTable.horizontalHeaderItem(0)
+        self.item2 = self.mainTable.horizontalHeaderItem(1)
+
+        self.item1.setText('English')
+        self.item2.setText('German')
+
+        self.language1.setText('  English')
+        self.language2.setText('German')
 
         # create table in database
         self.dbCursor = self.dbConn.cursor()
@@ -57,12 +73,15 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
 
         # save settings to file
         self.settings = QSettings(QSettings.IniFormat, QSettings.UserScope,
-            'PyDataManager', 'PyDataManager')
+            'PyVocTrainer', 'PyVocTrainer')
 
         self.addVocButton.clicked.connect(self.add_button_clicked)
         self.removeRowButton.clicked.connect(self.remove_row_clicked)
+        self.actionImport.triggered.connect(self.import_data)
 
         self.load_initial_settings()
+
+        self.dictionary = {}
 
     def load_initial_settings(self):
         '''Loads the initial settings for the application. Sets the mainTable
@@ -91,22 +110,27 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         # if not self.validate_fields():
         #     return False
 
-        currentRowCount = self.mainTable.rowCount()
-
-        self.mainTable.insertRow(currentRowCount)
-        self.mainTable.setItem(currentRowCount, 0, QTableWidgetItem(voc1))
-        self.mainTable.setItem(currentRowCount, 1, QTableWidgetItem(voc2))
-        self.mainTable.setItem(currentRowCount, 2, QTableWidgetItem(initLevel))
-
-        # commit changes to Database
-        parameters = (None, voc1, voc2, str(initLevel))
-        self.dbCursor.execute('''INSERT INTO Main VALUES (?, ?, ?, ?)''',
-         parameters)
-        self.dbConn.commit()
+        self.add_to_table(voc1, voc2, initLevel)
 
         self.voc1LineEdit.clear()
         self.voc2LineEdit.clear()
         self.voc1LineEdit.setFocus()
+
+    def add_to_table(self, language1, language2, level):
+        '''Adds the vocabulary pair and the level to the table'''
+
+        currentRowCount = self.mainTable.rowCount()
+
+        self.mainTable.insertRow(currentRowCount)
+        self.mainTable.setItem(currentRowCount, 0, QTableWidgetItem(language1))
+        self.mainTable.setItem(currentRowCount, 1, QTableWidgetItem(language2))
+        self.mainTable.setItem(currentRowCount, 2, QTableWidgetItem(level))
+
+        # commit changes to Database
+        parameters = (None, language1, language2, str(level))
+        self.dbCursor.execute('''INSERT INTO Main VALUES (?, ?, ?, ?)''',
+        parameters)
+        self.dbConn.commit()
 
     def remove_row_clicked(self):
         '''Removes the selected row from the mainTable.'''
@@ -142,9 +166,43 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
 
         return True
 
-    def import_action_triggered(self):
-        '''Database import handler.'''
-        pass
+    def import_data(self):
+        '''
+        Imports whole vocabulary from txt file into dictionary.
+
+        Column 1: First Language
+        Column 2: Second Language
+        Column 3: Level (1-5)
+        '''
+
+        inputfile = QFileDialog.getOpenFileName(parent = None, caption =
+        "Import database to a Application", directory = ".", filter =
+        "PyVocTrainer CSV (*.txt)")
+
+        print (inputfile[0])
+        if inputfile[0]:
+            try:
+                with open (inputfile[0], "r", newline = '') as infile:
+                    reader = csv.reader(infile, delimiter = '\t')
+                    for line in reader:
+                        print (line)
+                        word1 = line[0]
+                        translation = line[1]
+                        level = line[2]
+                        self.dictionary[word1] = [translation, level]
+
+            except Exception as msg:
+                print ("File not imported.\n The error is\n{}".format(msg))
+
+        else:
+            pass
+
+        for entry in self.dictionary:
+            liste = self.dictionary[entry]
+            translation = liste[0]
+            level = str(liste[1])
+            self.add_to_table(entry, translation, level)
+            print ('{}\t{}\t{}'.format(entry, translation, level))
 
     def export_action_triggered(self):
         '''Database export handler.'''
@@ -165,13 +223,21 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
 
 
 def main():
-    QCoreApplication.setApplicationName('PyDataManager')
+    QCoreApplication.setApplicationName('PyVocTrainer')
     QCoreApplication.setApplicationVersion('0.1')
-    QCoreApplication.setOrganizationName('PyDataManager')
-    QCoreApplication.setOrganizationDomain('pydatamanager.com')
+    QCoreApplication.setOrganizationName('PyVocTrainer')
+    QCoreApplication.setOrganizationDomain('PyVocTrainer.com')
+
 
     app = QApplication(sys.argv)
     form = Main()
+
+    # place application in screen center
+    screenGeometry = QApplication.desktop().screenGeometry()
+    x = (screenGeometry.width()-form.width()) / 2
+    y = (screenGeometry.height()-form.height()) / 2
+    form.move(x, y)
+
     form.show()
     app.exec_()
 
