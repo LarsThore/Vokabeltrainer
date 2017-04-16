@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>610</width>
-    <height>405</height>
+    <width>676</width>
+    <height>460</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,13 +19,13 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>581</width>
-      <height>341</height>
+      <width>661</width>
+      <height>381</height>
      </rect>
     </property>
     <property name="sizePolicy">
      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-      <horstretch>100</horstretch>
+      <horstretch>0</horstretch>
       <verstretch>0</verstretch>
      </sizepolicy>
     </property>
@@ -36,33 +36,13 @@
      <attribute name="title">
       <string>Learning</string>
      </attribute>
-     <widget class="QLabel" name="assertLabel">
-      <property name="geometry">
-       <rect>
-        <x>300</x>
-        <y>210</y>
-        <width>201</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>14</pointsize>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>Right / Wrong</string>
-      </property>
-     </widget>
      <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
-        <x>10</x>
-        <y>0</y>
-        <width>561</width>
-        <height>201</height>
+        <x>11</x>
+        <y>1</y>
+        <width>641</width>
+        <height>221</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout">
@@ -70,6 +50,9 @@
         <spacer name="verticalSpacer_4">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Preferred</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -174,19 +157,6 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="1">
-        <spacer name="verticalSpacer_3">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
        <item row="1" column="0">
         <widget class="QLabel" name="vocabsLearnedLabel">
          <property name="font">
@@ -200,7 +170,7 @@
           <enum>QFrame::NoFrame</enum>
          </property>
          <property name="text">
-          <string>Vocabs learned:</string>
+          <string>Words learned:</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -211,6 +181,9 @@
         <spacer name="verticalSpacer_2">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Preferred</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -224,6 +197,9 @@
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Preferred</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -253,20 +229,33 @@
          </property>
         </widget>
        </item>
+       <item row="0" column="1">
+        <widget class="QPushButton" name="startLearningButton">
+         <property name="text">
+          <string>Start Learning</string>
+         </property>
+         <property name="autoDefault">
+          <bool>true</bool>
+         </property>
+         <property name="default">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
-     <widget class="QPushButton" name="howeverTrueButton">
+     <widget class="QPushButton" name="howeverTrueButton_2">
       <property name="geometry">
        <rect>
-        <x>10</x>
-        <y>220</y>
-        <width>141</width>
-        <height>61</height>
+        <x>50</x>
+        <y>290</y>
+        <width>151</width>
+        <height>51</height>
        </rect>
       </property>
       <property name="text">
        <string>I had the 
-right answer...</string>
+right answer</string>
       </property>
       <property name="autoDefault">
        <bool>true</bool>
@@ -275,13 +264,13 @@ right answer...</string>
        <bool>true</bool>
       </property>
      </widget>
-     <widget class="QLabel" name="solutionLabel">
+     <widget class="QLabel" name="solutionLabel_3">
       <property name="geometry">
        <rect>
-        <x>160</x>
-        <y>250</y>
-        <width>401</width>
-        <height>31</height>
+        <x>220</x>
+        <y>290</y>
+        <width>421</width>
+        <height>51</height>
        </rect>
       </property>
       <property name="font">
@@ -296,6 +285,26 @@ right answer...</string>
        <string>Solution</string>
       </property>
      </widget>
+     <widget class="QLabel" name="assertionLabel_2">
+      <property name="geometry">
+       <rect>
+        <x>336</x>
+        <y>230</y>
+        <width>125</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Right / Wrong</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_2">
      <attribute name="title">
@@ -306,8 +315,8 @@ right answer...</string>
        <rect>
         <x>20</x>
         <y>60</y>
-        <width>531</width>
-        <height>191</height>
+        <width>631</width>
+        <height>241</height>
        </rect>
       </property>
       <attribute name="horizontalHeaderDefaultSectionSize">
@@ -380,8 +389,8 @@ right answer...</string>
      <widget class="QPushButton" name="removeRowButton">
       <property name="geometry">
        <rect>
-        <x>460</x>
-        <y>260</y>
+        <x>560</x>
+        <y>310</y>
         <width>84</width>
         <height>28</height>
        </rect>
@@ -401,7 +410,7 @@ right answer...</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>610</width>
+     <width>676</width>
      <height>25</height>
     </rect>
    </property>

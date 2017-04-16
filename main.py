@@ -11,14 +11,16 @@ import sys
 import os
 import logging
 import csv
+import numpy
 
 from ui_files import pymainWindow
 import sqlite3
 
 # TODO: Level richtig speichern
-# TODO: Tooltipps einfügen
+# TODO: Include Tooltipps
+# TODO: Split tabs into different windows
 # TODO: Make Widget stretchable
-# TODO: mehr Wörter der unteren Level auswählen
+# TODO: mehr Wörter der unteren Level zur Abfrage auswählen
 # TODO: Funktion/Programm zum Importieren von Vokabellisten einfügen
 
 
@@ -63,10 +65,12 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.language1.setText('  English')
         self.language2.setText('German')
 
+        self.solutionLabel_3.setText(' ')
+
         # create table in database
         self.dbCursor = self.dbConn.cursor()
         self.dbCursor.execute('''CREATE TABLE IF NOT EXISTS Main(id INTEGER\
-            PRIMARY KEY, language_one TEXT, language_two TEXT, level TEXT)''')
+            PRIMARY KEY, language_one TEXT, language_two TEXT, level INTEGER)''')
 
         # save changes to database
         self.dbConn.commit()
@@ -75,13 +79,17 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.settings = QSettings(QSettings.IniFormat, QSettings.UserScope,
             'PyVocTrainer', 'PyVocTrainer')
 
+        # add signals and slots
         self.addVocButton.clicked.connect(self.add_button_clicked)
         self.removeRowButton.clicked.connect(self.remove_row_clicked)
         self.actionImport.triggered.connect(self.import_data)
+        self.startLearningButton.clicked.connect(self.get_next_word)
 
-        self.load_initial_settings()
-
+        # initialize dictionary
         self.dictionary = {}
+        self.load_initial_settings()
+        self.dictKeys = list(self.dictionary.keys())
+
 
     def load_initial_settings(self):
         '''Loads the initial settings for the application. Sets the mainTable
@@ -96,7 +104,9 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
             # insert a QTableWidgetItem in the table
             self.mainTable.setItem(inx, 0, QTableWidgetItem(row[1]))
             self.mainTable.setItem(inx, 1, QTableWidgetItem(row[2]))
-            self.mainTable.setItem(inx, 2, QTableWidgetItem(str(row[3])))
+            self.mainTable.setItem(inx, 2, QTableWidgetItem(row[3]))
+
+            self.dictionary[row[1]] = [row[2], row[3]]
 
     def add_button_clicked(self):
         '''Calls the validate_fields method and adds the items to the table
@@ -166,6 +176,26 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
 
         return True
 
+    def get_next_word(self):
+        '''Chooses a word from the dictionary (keys) and writes it into the first
+        line edit.'''
+
+        # choose a random number to select a certain key from the dictionary
+        e = numpy.random.randint(len(self.dictionary))
+
+        # fill the first text-edit-box with a word from the dictionary
+        self.lineEdit_1.setText(self.dictKeys[e])
+
+        # show the level value
+        values = self.dictionary[self.dictKeys[e]]
+        level_text = str(values[1])
+        self.level.setText(level_text)
+
+        # set focus on second line edit
+        self.lineEdit_2.setFocus()
+
+        return self.dictKeys[e]
+
     def import_data(self):
         '''
         Imports whole vocabulary from txt file into dictionary.
@@ -200,7 +230,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         for entry in self.dictionary:
             liste = self.dictionary[entry]
             translation = liste[0]
-            level = str(liste[1])
+            level = liste[1]
             self.add_to_table(entry, translation, level)
             print ('{}\t{}\t{}'.format(entry, translation, level))
 
