@@ -16,12 +16,13 @@ import numpy
 from ui_files import pymainWindow
 import sqlite3
 
-# TODO: Level richtig speichern
+# TODO: Save levels correctly
+# TODO: Level is not updated immediately but only after restart
+# TODO: Use sql dictionary instead of manual dictionary
 # TODO: Include Tooltipps
 # TODO: Split tabs into different windows
 # TODO: Make Widget stretchable
 # TODO: mehr Wörter der unteren Level zur Abfrage auswählen
-# TODO: Funktion/Programm zum Importieren von Vokabellisten einfügen
 
 
 # set the default path of the application to HOME/AppDataManager directory
@@ -65,12 +66,15 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.language1.setText('  English')
         self.language2.setText('German')
 
-        self.solutionLabel_3.setText(' ')
+        self.solutionLabel.setText(' ')
 
         # create table in database
         self.dbCursor = self.dbConn.cursor()
-        self.dbCursor.execute('''CREATE TABLE IF NOT EXISTS Main(id INTEGER\
-            PRIMARY KEY, language_one TEXT, language_two TEXT, level INTEGER)''')
+        self.dbCursor.execute('''CREATE TABLE IF NOT EXISTS Main(
+                id INTEGER PRIMARY KEY,
+                language_one TEXT,
+                language_two TEXT,
+                level INTEGER)''')
 
         # save changes to database
         self.dbConn.commit()
@@ -84,6 +88,10 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.removeRowButton.clicked.connect(self.remove_row_clicked)
         self.actionImport.triggered.connect(self.import_data)
         self.startLearningButton.clicked.connect(self.get_next_word)
+
+        self.lineEdit_2.returnPressed.connect(lambda:
+         self.check_entry(self.dictionary[self.lineEdit_1.text()],
+         self.lineEdit_2.text(), self.lineEdit_1.text()))
 
         # initialize dictionary
         self.dictionary = {}
@@ -99,6 +107,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         allRows = self.dbCursor.fetchall()
 
         for row in allRows:
+            print (row)
             inx = allRows.index(row)
             self.mainTable.insertRow(inx)
             # insert a QTableWidgetItem in the table
@@ -106,7 +115,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
             self.mainTable.setItem(inx, 1, QTableWidgetItem(row[2]))
             self.mainTable.setItem(inx, 2, QTableWidgetItem(row[3]))
 
-            self.dictionary[row[1]] = [row[2], row[3]]
+            self.dictionary[row[1]] = [row[2], int(row[3])]
 
     def add_button_clicked(self):
         '''Calls the validate_fields method and adds the items to the table
@@ -139,8 +148,30 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         # commit changes to Database
         parameters = (None, language1, language2, str(level))
         self.dbCursor.execute('''INSERT INTO Main VALUES (?, ?, ?, ?)''',
-        parameters)
+         parameters)
         self.dbConn.commit()
+
+    def update_level(self, language1, language2, level):
+        '''Updates the level in table after correct answer.'''
+
+        # commit changes to Database
+        parameters = (level, language1)
+        self.dbCursor.execute(
+        '''UPDATE Main SET level = ? WHERE language_one = ?''', parameters)
+        self.dbConn.commit()
+
+        # update table in application
+        # make a tuple because sqlite needs a tuple as input
+        language1_tuple = (language1, )
+        self.dbCursor.execute(
+         '''SELECT * FROM Main WHERE language_one = ?''', language1_tuple)
+
+        row = self.dbCursor.fetchone()
+        print (row, type(row))
+        # indexing starts at 3
+        inx = row[0] + 3
+        self.mainTable.setCurrentCell(inx, 2)
+        self.mainTable.setCurrentItem(QTableWidgetItem(level))
 
     def remove_row_clicked(self):
         '''Removes the selected row from the mainTable.'''
@@ -195,6 +226,46 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.lineEdit_2.setFocus()
 
         return self.dictKeys[e]
+
+    def check_entry(self, word1, word2, word3):
+        '''Returns True if the word1 and word2 are a key-value-pair and False
+        if not.'''
+        # extract correct word from the list in dictionary according to
+        # first line edit -- second language -- correct word
+        word1 = str(word1[0])
+        word1 = word1.strip('\t')
+        # the word in second line edit -- second language -- tested word
+        word2 = str(word2)
+        # the respective word in - first language
+        word3 = str(word3)
+
+        print(word1, word2)
+
+        if word1 == word2:
+            # correct answer
+            print (True)
+            self.assertionLabel.setText("Correct!")
+            self.get_next_word()
+
+            # update line edits
+            self.lineEdit_2.clear()
+            self.lineEdit_2.setFocus()
+
+            # update level
+            values = self.dictionary[word3]
+            level = values[1]
+            new_level = level + 1
+            self.dictionary[word3] = [word2, new_level]
+            self.update_level(word3, word2, new_level)
+            return True
+        else:
+            # incorrect answer
+            print (False)
+            self.assertionLabel.setText("Unfortunately wrong!")
+            self.solutionLabel.setText(word1)
+            self.lineEdit_2.setFocus()
+            self.lineEdit_2.selectAll()
+            return False
 
     def import_data(self):
         '''
