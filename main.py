@@ -23,47 +23,59 @@ import sqlite3
 # TODO: Split tabs into different windows
 # TODO: Make Widget stretchable
 # TODO: mehr Wörter der unteren Level zur Abfrage auswählen
+# TODO: introduce counting with bars
+# TODO: choose to learn english or french
 
+def voc_logging(language):
+    # set the default path of the application to HOME/AppDataManager directory
+    # (soft-coding)
 
-# set the default path of the application to HOME/AppDataManager directory
-# (soft-coding)
-appDataPath = os.environ['HOME'] + '/VocTrainer/'
+    language = '/{}/'.format(str(language))
 
-# if the path does not exist create it
-if not os.path.exists(appDataPath):
-    try:
-        os.makedirs(appDataPath)
-    except Exception:
-        appDataPath = os.getcwd()
+    appDataPath = os.environ['HOME'] + '/VocTrainer/' + language
 
-# Logging; format
-logging.basicConfig(filename= appDataPath + 'pyvoctrainer.log',
-    format = '%(asctime)-15s: %(name)-18s - %(levelname)-8s - %(module)-15s\
-     - %(funcName)-15s - %(lineno)-6d - %(message)s')
+    # if the path does not exist create it
+    if not os.path.exists(appDataPath):
+        try:
+            os.makedirs(appDataPath)
+        except Exception:
+            appDataPath = os.getcwd()
 
-# define the module name in the basic Configuration
-logger = logging.getLogger(name = 'main-gui')
+    # Logging; format
+    logging.basicConfig(filename= appDataPath + 'pyvoctrainer.log',
+        format = '%(asctime)-15s: %(name)-18s - %(levelname)-8s - %(module)-15s\
+         - %(funcName)-15s - %(lineno)-6d - %(message)s')
+
+    # define the module name in the basic Configuration
+    logger = logging.getLogger(name = 'main-gui')
+
+    return appDataPath
+
+path = voc_logging(sys.argv[1])
 
 class Main(QMainWindow, pymainWindow.Ui_MainWindow):
     '''Class inherits from Qt.QMainWindow class and from class built by the
     QtDesigner'''
 
     # make Database path for table containing the vocabulary
-    dbPath = appDataPath + 'pyvoc.db'
+    dbPath = path + 'pyvoc.db'
     dbConn = sqlite3.connect(dbPath)
+
 
     def __init__(self, parent = None):
         super(Main, self).__init__(parent)
         self.setupUi(self)
 
+        self.language = sys.argv[1]
+
         # set items for table
         self.item1 = self.mainTable.horizontalHeaderItem(0)
         self.item2 = self.mainTable.horizontalHeaderItem(1)
 
-        self.item1.setText('English')
+        self.item1.setText('{}'.format(self.language))
         self.item2.setText('German')
 
-        self.language1.setText('  English')
+        self.language1.setText('  {}'.format(self.language))
         self.language2.setText('German')
 
         self.solutionLabel.setText(' ')
@@ -85,13 +97,22 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
 
         # add signals and slots
         self.addVocButton.clicked.connect(self.add_button_clicked)
+        self.voc2LineEdit.returnPressed.connect(self.add_button_clicked)
         self.removeRowButton.clicked.connect(self.remove_row_clicked)
         self.actionImport.triggered.connect(self.import_data)
         self.startLearningButton.clicked.connect(self.get_next_word)
+        self.howeverTrueButton.clicked.connect(lambda:
+         self.set_answer_true(self.dictionary[self.lineEdit_1.text()],
+         self.lineEdit_1.text()))
 
         self.lineEdit_2.returnPressed.connect(lambda:
          self.check_entry(self.dictionary[self.lineEdit_1.text()],
          self.lineEdit_2.text(), self.lineEdit_1.text()))
+
+        geometry = self.vocabsLearnedLabel.geometry()
+        print(geometry)
+        # geometry = self.vocabsLearnedLabel.setGeometry(QRect(60, 0, 100, 50))
+        self.vocabsLearnedLabel.setText("Words learned in current session:")
 
         # initialize dictionary
         self.dictionary = {}
@@ -216,6 +237,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
 
         # fill the first text-edit-box with a word from the dictionary
         self.lineEdit_1.setText(self.dictKeys[e])
+        self.lineEdit_2.clear()
 
         # show the level value
         values = self.dictionary[self.dictKeys[e]]
@@ -226,6 +248,26 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.lineEdit_2.setFocus()
 
         return self.dictKeys[e]
+
+    def correct_answer_given(self, word2, word3):
+        '''Handles all the stuff which needs to be done if the answer was
+        correct'''
+        self.get_next_word()
+
+        # update line edits and labels
+        self.lineEdit_2.clear()
+        self.lineEdit_2.setFocus()
+
+        count = int(self.vocabsLearned.text())
+        count += 1
+        self.vocabsLearned.setText(str(count))
+
+        # update level
+        values = self.dictionary[word3]
+        level = values[1]
+        new_level = level + 1
+        self.dictionary[word3] = [word2, new_level]
+        self.update_level(word3, word2, new_level)
 
     def check_entry(self, word1, word2, word3):
         '''Returns True if the word1 and word2 are a key-value-pair and False
@@ -245,18 +287,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
             # correct answer
             print (True)
             self.assertionLabel.setText("Correct!")
-            self.get_next_word()
-
-            # update line edits
-            self.lineEdit_2.clear()
-            self.lineEdit_2.setFocus()
-
-            # update level
-            values = self.dictionary[word3]
-            level = values[1]
-            new_level = level + 1
-            self.dictionary[word3] = [word2, new_level]
-            self.update_level(word3, word2, new_level)
+            self.correct_answer_given(word2, word3)
             return True
         else:
             # incorrect answer
@@ -265,6 +296,8 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
             self.solutionLabel.setText(word1)
             self.lineEdit_2.setFocus()
             self.lineEdit_2.selectAll()
+            self.continueButton.clicked.connect(self.get_next_word)
+            self.continueButton.pressed.connect(self.get_next_word)
             return False
 
     def import_data(self):
@@ -287,10 +320,17 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
                     reader = csv.reader(infile, delimiter = '\t')
                     for line in reader:
                         print (line)
-                        word1 = line[0]
-                        translation = line[1]
-                        level = line[2]
-                        self.dictionary[word1] = [translation, level]
+                        if len(line) == 3:
+                            word1 = line[0]
+                            translation = line[1]
+                            level = line[2]
+                            self.dictionary[word1] = [translation, level]
+                            self.dictKeys.append(word1)
+                        elif len(line) == 2:
+                            word1 = line[0]
+                            translation = line[1]
+                            self.dictionary[word1] = [translation, 0]
+                            self.dictKeys.append(word1)
 
             except Exception as msg:
                 print ("File not imported.\n The error is\n{}".format(msg))
@@ -309,18 +349,18 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         '''Database export handler.'''
         pass
 
-    def preferences_action_triggered(self):
-        '''Fires up the Preferences dialog. '''
-        pass
+    def set_answer_true(self, word2, word3):
+        '''Carries out basically the same procedure as if the answer were given
+        correctly at the beginning
 
-    def about_action_triggered(self):
-        '''Opens the about dialog. '''
-        pass
+        word2 and word3 according to function check_entry'''
 
-    def exit_action_triggered(self):
-        '''Closes the application. '''
-        pass
+        word2 = str(word2)
+        word3 = str(word3)
 
+        self.assertionLabel.setText(" ")
+        self.correct_answer_given(word2, word3)
+        return True
 
 
 def main():
@@ -328,7 +368,6 @@ def main():
     QCoreApplication.setApplicationVersion('0.1')
     QCoreApplication.setOrganizationName('PyVocTrainer')
     QCoreApplication.setOrganizationDomain('PyVocTrainer.com')
-
 
     app = QApplication(sys.argv)
     form = Main()

@@ -1,0 +1,5 @@
+house	Haus
+much	viel
+green	grün
+finally	endlich
+funny	lustig
