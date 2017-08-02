@@ -16,7 +16,7 @@ import numpy
 from ui_files import pymainWindow
 import sqlite3
 
-# TODO: Save levels correctly
+# TODO: Save levels correctly (should work fine)
 # TODO: Level is not updated immediately but only after restart
 # TODO: Use sql dictionary instead of manual dictionary
 # TODO: Include Tooltipps
@@ -24,7 +24,7 @@ import sqlite3
 # TODO: Make Widget stretchable
 # TODO: mehr Wörter der unteren Level zur Abfrage auswählen
 # TODO: introduce counting with bars
-# TODO: choose to learn english or french
+# TODO: choose to learn english or french --- DONE
 
 def voc_logging(language):
     # set the default path of the application to HOME/AppDataManager directory
