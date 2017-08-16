@@ -12,19 +12,9 @@ import os
 import logging
 import csv
 import numpy
-
-from ui_files import pymainWindow
 import sqlite3
 
-# TODO: Save levels correctly (should work fine)
-# TODO: Level is not updated immediately but only after restart
-# TODO: Use sql dictionary instead of manual dictionary
-# TODO: Include Tooltipps
-# TODO: Split tabs into different windows
-# TODO: Make Widget stretchable
-# TODO: mehr Wörter der unteren Level zur Abfrage auswählen
-# TODO: introduce counting with bars
-# TODO: choose to learn english or french --- DONE
+from ui_files import pymainWindow
 
 def voc_logging(language):
     # set the default path of the application to HOME/AppDataManager directory
@@ -86,7 +76,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
                 id INTEGER PRIMARY KEY,
                 language_one TEXT,
                 language_two TEXT,
-                level INTEGER)''')
+                tableLevel INTEGER)''')
 
         # save changes to database
         self.dbConn.commit()
@@ -110,7 +100,6 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
          self.lineEdit_2.text(), self.lineEdit_1.text()))
 
         geometry = self.vocabsLearnedLabel.geometry()
-        print(geometry)
         # geometry = self.vocabsLearnedLabel.setGeometry(QRect(60, 0, 100, 50))
         self.vocabsLearnedLabel.setText("Words learned in current session:")
 
@@ -119,55 +108,57 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.load_initial_settings()
         self.dictKeys = list(self.dictionary.keys())
 
-
     def load_initial_settings(self):
         '''Loads the initial settings for the application. Sets the mainTable
         columns width. '''
+
         # select all items from Main
         self.dbCursor.execute('''SELECT * FROM Main''')
+
+        # returns a python list
         allRows = self.dbCursor.fetchall()
 
-        for row in allRows:
-            print (row)
-            inx = allRows.index(row)
-            self.mainTable.insertRow(inx)
-            # insert a QTableWidgetItem in the table
-            self.mainTable.setItem(inx, 0, QTableWidgetItem(row[1]))
-            self.mainTable.setItem(inx, 1, QTableWidgetItem(row[2]))
-            self.mainTable.setItem(inx, 2, QTableWidgetItem(row[3]))
+        for row_inx, row in enumerate(allRows):
+            self.insert_item(self.mainTable, row_inx, row)
 
             self.dictionary[row[1]] = [row[2], int(row[3])]
 
+    def insert_item(self, table, row_inx, row):
+
+        table.insertRow(row_inx)
+        row = list(row)
+        print(row)
+
+        for col_inx, value in enumerate(row[1:]):
+            item = QTableWidgetItem()
+            item.setData(Qt.EditRole, value)
+            table.setItem(row_inx, col_inx, item)
+
     def add_button_clicked(self):
-        '''Calls the validate_fields method and adds the items to the table
-        if true. '''
+        '''Adds the vocabulary pair to the table.'''
+
         voc1 = self.voc1LineEdit.text()
         voc2 = self.voc2LineEdit.text()
 
-        initLevel = str(1)
+        initLevel = 1       # integer !
+        dummy = self.mainTable.rowCount() + 1   # for correct indexing in insert_item method
 
-        # check if field entry has correct structure
-        # if not self.validate_fields():
-        #     return False
-
-        self.add_to_table(voc1, voc2, initLevel)
+        self.add_to_table([dummy, voc1, voc2, initLevel])
 
         self.voc1LineEdit.clear()
         self.voc2LineEdit.clear()
         self.voc1LineEdit.setFocus()
 
-    def add_to_table(self, language1, language2, level):
+    def add_to_table(self, row):
         '''Adds the vocabulary pair and the level to the table'''
 
         currentRowCount = self.mainTable.rowCount()
-
-        self.mainTable.insertRow(currentRowCount)
-        self.mainTable.setItem(currentRowCount, 0, QTableWidgetItem(language1))
-        self.mainTable.setItem(currentRowCount, 1, QTableWidgetItem(language2))
-        self.mainTable.setItem(currentRowCount, 2, QTableWidgetItem(level))
+        print(row)
+        self.insert_item(self.mainTable, currentRowCount, row)
 
         # commit changes to Database
-        parameters = (None, language1, language2, str(level))
+        # first parameter automatically defined by sq engine (id number)
+        parameters = (None, row[1], row[2], row[3])
         self.dbCursor.execute('''INSERT INTO Main VALUES (?, ?, ?, ?)''',
          parameters)
         self.dbConn.commit()
@@ -179,6 +170,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         parameters = (level, language1)
         self.dbCursor.execute(
         '''UPDATE Main SET level = ? WHERE language_one = ?''', parameters)
+
         self.dbConn.commit()
 
         # update table in application
@@ -208,26 +200,6 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
             self.dbConn.commit()
             self.mainTable.removeRow(currentRow)
 
-    def validate_fields(self):
-        '''Validates the QLineEdits based on RegEx '''
-        # select one column from the table
-        self.dbCursor.execute('''SELECT username FROM Main''')
-        usernames = self.dbCursor.fetchall()
-        for username_ in usernames:
-            if self.userName.text() in username_[0]:
-                QMessageBox.warning(self,'Warning!','Such username already exists!')
-                return False
-
-        # regaular expression match
-        # ^[2-9] --> begins with a 2, 3, 4, ... or 9
-        # one digit, two digits - three digits - four digits
-        # e.g. 673-734-7384
-        if not re.match('^[2-9]\d{2}-\d{3}-\d{4}', self.phoneNumber.text()):
-            QMessageBox.warning(self, 'Warning!', 'Phone number seems incorrect!')
-            return False
-
-        return True
-
     def get_next_word(self):
         '''Chooses a word from the dictionary (keys) and writes it into the first
         line edit.'''
@@ -242,7 +214,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         # show the level value
         values = self.dictionary[self.dictKeys[e]]
         level_text = str(values[1])
-        self.level.setText(level_text)
+        self.levelText.setText(level_text)
 
         # set focus on second line edit
         self.lineEdit_2.setFocus()
@@ -323,13 +295,13 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
                         if len(line) == 3:
                             word1 = line[0]
                             translation = line[1]
-                            level = line[2]
+                            level = int(line[2])
                             self.dictionary[word1] = [translation, level]
                             self.dictKeys.append(word1)
                         elif len(line) == 2:
                             word1 = line[0]
                             translation = line[1]
-                            self.dictionary[word1] = [translation, 0]
+                            self.dictionary[word1] = [translation, 1]
                             self.dictKeys.append(word1)
 
             except Exception as msg:
@@ -342,7 +314,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
             liste = self.dictionary[entry]
             translation = liste[0]
             level = liste[1]
-            self.add_to_table(entry, translation, level)
+            self.add_to_table([entry, translation, level])
             print ('{}\t{}\t{}'.format(entry, translation, level))
 
     def export_action_triggered(self):
@@ -383,3 +355,14 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+    # TODO: Save levels correctly (should work fine)
+    # TODO: Level is not updated immediately but only after restart
+    # TODO: Use sql dictionary instead of manual dictionary
+    # TODO: Include Tooltipps
+    # TODO: Split tabs into different windows
+    # TODO: Make Widget stretchable
+    # TODO: mehr Wörter der unteren Level zur Abfrage auswählen
+    # TODO: introduce counting with bars
+    # TODO: choose to learn english or french --- DONE
