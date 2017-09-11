@@ -120,7 +120,6 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
 
         for row_inx, row in enumerate(allRows):
             self.insert_item(self.mainTable, row_inx, row)
-
             self.dictionary[row[1]] = [row[2], int(row[3])]
 
     def insert_item(self, table, row_inx, row):
@@ -173,18 +172,18 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
 
         self.dbConn.commit()
 
+
         # update table in application
         # make a tuple because sqlite needs a tuple as input
         language1_tuple = (language1, )
-        self.dbCursor.execute(
-         '''SELECT * FROM Main WHERE language_one = ?''', language1_tuple)
+        self.dbCursor.execute('''SELECT * FROM Main WHERE language_one = ?''', language1_tuple)
 
         row = self.dbCursor.fetchone()
         print (row, type(row))
         # indexing starts at 3
         inx = row[0] + 3
-        self.mainTable.setCurrentCell(inx, 2)
-        self.mainTable.setCurrentItem(QTableWidgetItem(level))
+
+        self.insert_item(self.mainTable, inx, row)
 
     def remove_row_clicked(self):
         '''Removes the selected row from the mainTable.'''
