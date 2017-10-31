@@ -6,23 +6,38 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-import re
-import sys
-import os
+import re           # system commands
+import sys          # system commands
+import os           # system commands
+import subprocess   # system commands
 import logging
-import csv
-import numpy
-import sqlite3
+import csv          # import/export
+import numpy        # scientific computing
+import sqlite3      # tables
+
+# ------------- rcc and uic automation ----------------
+# (from Peter Bouda: PyQt und PySide)
+
+bindir = '/usr/bin'
+
+uic_path = os.path.join(bindir, 'pyuic5')
+ui_path = 'ui_files'
+out_path_ui = 'ui_files'
+ui_files = { 'mainWindow.ui' : 'pymainWindow.py'}
+
+for file in ui_files:
+    file_path = os.path.join(ui_path, file)
+    out_file_path = os.path.join(out_path_ui, ui_files[file])
+    subprocess.call([uic_path, file_path, '-o', out_file_path])
 
 from ui_files import pymainWindow
 
-def voc_logging(language):
+#               ----------------------------
+
+def voc_logging(languagePair):
+
     # set the default path of the application to HOME/AppDataManager directory
-    # (soft-coding)
-
-    language = '/{}/'.format(str(language))
-
-    appDataPath = os.environ['HOME'] + '/VocTrainer/' + language
+    appDataPath = os.environ['HOME'] + '/VocTrainer/' + str(languagePair)
 
     # if the path does not exist create it
     if not os.path.exists(appDataPath):
@@ -41,7 +56,37 @@ def voc_logging(language):
 
     return appDataPath
 
-path = voc_logging(sys.argv[1])
+def get_languagePair():
+
+    language_dict = {'French': ['french', 'French', 'Französisch', 'französisch',
+                                                        'Francais', 'francais'],
+                     'German': ['deutsch', 'Deutsch', 'German', 'german'],
+                     'English': ['english', 'English', 'Englisch', 'englisch'] }
+
+    language1 = sys.argv[1]
+    language2 = sys.argv[2]
+
+    # reduce to english terms
+    for key, value in language_dict.items():
+        if language1 in value:
+            language1 = key
+
+    for key, value in language_dict.items():
+        if language2 in value:
+            language2 = key
+
+    # reduce possibilities of word pairs to three variants
+    if language2 == 'French':
+        language1, language2 = language2, language1
+
+    if language1 == 'German':
+        language1, language2 = language2, language1
+
+    languagePair = '{language1}_{language2}'.format(language1=language1, language2=language2)
+    return language1, language2, languagePair
+
+language1, language2, pair = get_languagePair()
+path = voc_logging(pair)
 
 class Main(QMainWindow, pymainWindow.Ui_MainWindow):
     '''Class inherits from Qt.QMainWindow class and from class built by the
@@ -52,21 +97,22 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
     dbConn = sqlite3.connect(dbPath)
 
 
-    def __init__(self, parent = None):
+    def __init__(self, language1, language2, parent = None):
         super(Main, self).__init__(parent)
         self.setupUi(self)
 
-        self.language = sys.argv[1]
+        self.language1 = str(language1)
+        self.language2 = str(language2)
 
         # set items for table
         self.item1 = self.mainTable.horizontalHeaderItem(0)
         self.item2 = self.mainTable.horizontalHeaderItem(1)
 
-        self.item1.setText('{}'.format(self.language))
-        self.item2.setText('German')
+        self.item1.setText('{}'.format(self.language1))
+        self.item2.setText('{}'.format(self.language2))
 
-        self.language1.setText('  {}'.format(self.language))
-        self.language2.setText('German')
+        self.language1Label.setText('    {}'.format(self.language1))
+        self.language2Label.setText(' {}'.format(self.language2))
 
         self.solutionLabel.setText(' ')
 
@@ -341,7 +387,7 @@ def main():
     QCoreApplication.setOrganizationDomain('PyVocTrainer.com')
 
     app = QApplication(sys.argv)
-    form = Main()
+    form = Main(language1, language2)
 
     # place application in screen center
     screenGeometry = QApplication.desktop().screenGeometry()
