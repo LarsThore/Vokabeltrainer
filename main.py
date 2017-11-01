@@ -96,7 +96,6 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
     dbPath = path + 'pyvoc.db'
     dbConn = sqlite3.connect(dbPath)
 
-
     def __init__(self, language1, language2, parent = None):
         super(Main, self).__init__(parent)
         self.setupUi(self)
@@ -104,7 +103,43 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.language1 = str(language1)
         self.language2 = str(language2)
 
-        # set items for table
+        # initialize dictionary
+        self.dictionary = {}
+        self.dictKeys = list(self.dictionary.keys())
+
+        self.make_table()
+        self.load_settings()
+        self.load_table()
+        self.set_texts_and_labels()
+        self.set_signals_and_slots()
+        self.adjust_table_headers()
+
+        self.memoWidget = Memory(self.memoWidget.geometry(), self.tab3)
+
+
+
+    def adjust_table_headers(self):
+
+        header = self.mainTable.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+        header.setDefaultSectionSize(100)
+
+    def make_table(self):
+
+        # create table in database
+        self.dbCursor = self.dbConn.cursor()
+        self.dbCursor.execute('''CREATE TABLE IF NOT EXISTS Main(
+        id INTEGER PRIMARY KEY,
+        language_one TEXT,
+        language_two TEXT,
+        tableLevel INTEGER)''')
+
+        # save changes to database
+        self.dbConn.commit()
+
+    def set_texts_and_labels(self):
+
         self.item1 = self.mainTable.horizontalHeaderItem(0)
         self.item2 = self.mainTable.horizontalHeaderItem(1)
 
@@ -116,50 +151,34 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
 
         self.solutionLabel.setText(' ')
 
-        # create table in database
-        self.dbCursor = self.dbConn.cursor()
-        self.dbCursor.execute('''CREATE TABLE IF NOT EXISTS Main(
-                id INTEGER PRIMARY KEY,
-                language_one TEXT,
-                language_two TEXT,
-                tableLevel INTEGER)''')
+    def set_signals_and_slots(self):
 
-        # save changes to database
-        self.dbConn.commit()
-
-        # save settings to file
-        self.settings = QSettings(QSettings.IniFormat, QSettings.UserScope,
-            'PyVocTrainer', 'PyVocTrainer')
-
-        # add signals and slots
         self.addVocButton.clicked.connect(self.add_button_clicked)
         self.voc2LineEdit.returnPressed.connect(self.add_button_clicked)
         self.removeRowButton.clicked.connect(self.remove_row_clicked)
         self.actionImport.triggered.connect(self.import_data)
         self.startLearningButton.clicked.connect(self.get_next_word)
+
         self.howeverTrueButton.clicked.connect(lambda:
-         self.set_answer_true(self.dictionary[self.lineEdit_1.text()],
-         self.lineEdit_1.text()))
+                self.set_answer_true(self.dictionary[self.lineEdit_1.text()],
+                self.lineEdit_1.text()))
 
         self.lineEdit_2.returnPressed.connect(lambda:
-         self.check_entry(self.dictionary[self.lineEdit_1.text()],
-         self.lineEdit_2.text(), self.lineEdit_1.text()))
+                self.check_entry(self.dictionary[self.lineEdit_1.text()],
+                self.lineEdit_2.text(), self.lineEdit_1.text()))
 
-        geometry = self.vocabsLearnedLabel.geometry()
-        # geometry = self.vocabsLearnedLabel.setGeometry(QRect(60, 0, 100, 50))
-        self.vocabsLearnedLabel.setText("Words learned in current session:")
-
-        # initialize dictionary
-        self.dictionary = {}
-        self.load_initial_settings()
-        self.dictKeys = list(self.dictionary.keys())
-
-    def load_initial_settings(self):
+    def load_settings(self):
         '''Loads the initial settings for the application. Sets the mainTable
         columns width. '''
 
+        # save settings to file
+        self.settings = QSettings(QSettings.IniFormat, QSettings.UserScope,
+        'PyVocTrainer', 'PyVocTrainer')
+
         # select all items from Main
         self.dbCursor.execute('''SELECT * FROM Main''')
+
+    def load_table(self):
 
         # returns a python list
         allRows = self.dbCursor.fetchall()
@@ -214,7 +233,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         # commit changes to Database
         parameters = (level, language1)
         self.dbCursor.execute(
-        '''UPDATE Main SET level = ? WHERE language_one = ?''', parameters)
+        '''UPDATE Main SET tableLevel = ? WHERE language_one = ?''', parameters)
 
         self.dbConn.commit()
 
@@ -379,6 +398,85 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.correct_answer_given(word2, word3)
         return True
 
+class Memory(QWidget):
+
+    grid = None
+    scene = None
+
+    def __init__(self, geometry, parent=None):
+        super(Memory, self).__init__(parent=parent)
+
+        self.layout = QGridLayout(self)
+
+        self.scene = QGraphicsScene(self)
+        self.scene.setSceneRect(geometry.x(), geometry.y(), geometry.width(), geometry.height())
+        self.scene.setBackgroundBrush(Qt.white)
+
+        self.view = QGraphicsView()
+        self.view.setScene(self.scene)
+
+        self.layout.addWidget(self.view)
+
+        self.cards = list()
+        self.add_items()
+
+    def add_items(self):
+
+        w = 220
+        h = 110
+
+        text = 'Oh, Dear...'
+
+        for i in range(4):
+            x = i*w
+            for j in range(4):
+                y = j*h
+                # rect = QRectF(x+35+i*40, y+50+j*40, w, h)
+                item = QGraphicsSimpleTextItem(text)
+                item.setX(x+35+i*40)
+                item.setY(y+50+j*40)
+                item.setFrame('Box')
+                self.cards.append(item)
+                self.scene.addItem(item)
+
+# class Card(QGraphicsObject):
+class Card(QGraphicsSimpleTextItem):
+
+    def __init__(self, text, rectangle, parent = None):
+        super(Card, self).__init__(parent=parent)
+
+        self.setText(text)
+
+        self.rectangle = rectangle
+        self.set_gradient(QColor(200, 200, 200, 170))
+
+        self.setAcceptHoverEvents(True)
+        self.pen = QPen(Qt.NoPen)
+        # self.brush = QBrush(QColor(0, 200, 0, 170))  # green
+        # self.brush = QBrush(QColor(200, 200, 200, 170))
+        self.brush = QBrush(self.gradient)
+
+        self.setFlag(QGraphicsItem.ItemIsMovable)
+
+    def boundingRect(self):
+        return self.rectangle
+
+    def set_gradient(self, color):
+        """Sets the color gradient of the edge"""
+
+        self.gradient = QLinearGradient(self.rectangle.bottomLeft(),
+                                        self.rectangle.topRight())
+        self.gradient.setColorAt(0.7, color)
+        self.gradient.setColorAt(1, color.darker(20))
+
+        return self.gradient
+
+    def paint(self, painter, option, widget):
+        painter.setBrush(self.brush)
+        painter.setPen(self.pen)
+        painter.drawRoundedRect(self.rectangle, 10, 10)
+
+
 
 def main():
     QCoreApplication.setApplicationName('PyVocTrainer')
@@ -402,12 +500,12 @@ if __name__ == '__main__':
     main()
 
 
-    # TODO: Save levels correctly (should work fine)
-    # TODO: Level is not updated immediately but only after restart
-    # TODO: Use sql dictionary instead of manual dictionary
-    # TODO: Include Tooltipps
-    # TODO: Split tabs into different windows
-    # TODO: Make Widget stretchable
-    # TODO: mehr Wörter der unteren Level zur Abfrage auswählen
-    # TODO: introduce counting with bars
-    # TODO: choose to learn english or french --- DONE
+# TODO: Save levels correctly (should work fine)
+# TODO: Level is not updated immediately but only after restart
+# TODO: Use sql dictionary instead of manual dictionary
+# TODO: Include Tooltipps
+# TODO: Split tabs into different windows
+# TODO: Make Widget stretchable
+# TODO: mehr Wörter der unteren Level zur Abfrage auswählen
+# TODO: introduce counting with bars
+# TODO: choose to learn english or french --- DONE
