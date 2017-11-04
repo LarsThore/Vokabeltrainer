@@ -15,6 +15,8 @@ import csv          # import/export
 import numpy        # scientific computing
 import sqlite3      # tables
 
+from memory import Memory
+
 # ------------- rcc and uic automation ----------------
 # (from Peter Bouda: PyQt und PySide)
 
@@ -115,8 +117,11 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.adjust_table_headers()
 
         self.memoWidget = Memory(self.memoWidget.geometry(), self.tab3)
+        self.make_cards_dragable()
 
-
+    def make_cards_dragable(self):
+        # self.label_1.setFlag(QGraphicsItem.ItemIsMovable)
+        pass
 
     def adjust_table_headers(self):
 
@@ -397,86 +402,6 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.assertionLabel.setText(" ")
         self.correct_answer_given(word2, word3)
         return True
-
-class Memory(QWidget):
-
-    grid = None
-    scene = None
-
-    def __init__(self, geometry, parent=None):
-        super(Memory, self).__init__(parent=parent)
-
-        self.layout = QGridLayout(self)
-
-        self.scene = QGraphicsScene(self)
-        self.scene.setSceneRect(geometry.x(), geometry.y(), geometry.width(), geometry.height())
-        self.scene.setBackgroundBrush(Qt.white)
-
-        self.view = QGraphicsView()
-        self.view.setScene(self.scene)
-
-        self.layout.addWidget(self.view)
-
-        self.cards = list()
-        self.add_items()
-
-    def add_items(self):
-
-        w = 220
-        h = 110
-
-        text = 'Oh, Dear...'
-
-        for i in range(4):
-            x = i*w
-            for j in range(4):
-                y = j*h
-                # rect = QRectF(x+35+i*40, y+50+j*40, w, h)
-                item = QGraphicsSimpleTextItem(text)
-                item.setX(x+35+i*40)
-                item.setY(y+50+j*40)
-                item.setFrame('Box')
-                self.cards.append(item)
-                self.scene.addItem(item)
-
-# class Card(QGraphicsObject):
-class Card(QGraphicsSimpleTextItem):
-
-    def __init__(self, text, rectangle, parent = None):
-        super(Card, self).__init__(parent=parent)
-
-        self.setText(text)
-
-        self.rectangle = rectangle
-        self.set_gradient(QColor(200, 200, 200, 170))
-
-        self.setAcceptHoverEvents(True)
-        self.pen = QPen(Qt.NoPen)
-        # self.brush = QBrush(QColor(0, 200, 0, 170))  # green
-        # self.brush = QBrush(QColor(200, 200, 200, 170))
-        self.brush = QBrush(self.gradient)
-
-        self.setFlag(QGraphicsItem.ItemIsMovable)
-
-    def boundingRect(self):
-        return self.rectangle
-
-    def set_gradient(self, color):
-        """Sets the color gradient of the edge"""
-
-        self.gradient = QLinearGradient(self.rectangle.bottomLeft(),
-                                        self.rectangle.topRight())
-        self.gradient.setColorAt(0.7, color)
-        self.gradient.setColorAt(1, color.darker(20))
-
-        return self.gradient
-
-    def paint(self, painter, option, widget):
-        painter.setBrush(self.brush)
-        painter.setPen(self.pen)
-        painter.drawRoundedRect(self.rectangle, 10, 10)
-
-
 
 def main():
     QCoreApplication.setApplicationName('PyVocTrainer')
