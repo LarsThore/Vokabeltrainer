@@ -65,13 +65,17 @@ def get_languagePair():
                      'German': ['deutsch', 'Deutsch', 'German', 'german'],
                      'English': ['english', 'English', 'Englisch', 'englisch'] }
 
-    language1 = sys.argv[1]
-    language2 = sys.argv[2]
+    try:
+        language1 = sys.argv[1]
+        language2 = sys.argv[2]
+    except IndexError:
+        language1 = input('Please type in the language you know (your mother tongue): ')
+        language2 = input('Now, please type in the language you want to learn: ')
 
     # reduce to english terms
     for key, value in language_dict.items():
         if language1 in value:
-            language1 = key
+            language1 = key            
 
     for key, value in language_dict.items():
         if language2 in value:
@@ -85,6 +89,7 @@ def get_languagePair():
         language1, language2 = language2, language1
 
     languagePair = '{language1}_{language2}'.format(language1=language1, language2=language2)
+
     return language1, language2, languagePair
 
 language1, language2, pair = get_languagePair()

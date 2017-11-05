@@ -25,6 +25,8 @@ class Memory(QWidget):
 
         self.layout.addWidget(self.view)
 
+        self.zValueList = list()
+
         self.cards = list()
         self.add_cards()
 
@@ -41,26 +43,67 @@ class Memory(QWidget):
                 self.make_proxy(rect)
 
     def make_proxy(self, rect):
+
         label = QLabel('Hallo')
         label.setAlignment(Qt.AlignCenter | Qt.AlignCenter)
 
-        # create my node
-        proxy = QGraphicsProxyWidget()
+        # create proxy
+        # proxy = QGraphicsProxyWidget()
+        proxy = Proxy(self.zValueList)
         proxy.setWidget(label)
         proxy.setGeometry(rect)
         proxy.setFlag(QGraphicsItem.ItemStacksBehindParent, True)
+
+
         self.scene.addItem(proxy)
+
+        self.zValueList.append(proxy.zValue())
+
         # create parent grabby item, sized a bit bigger than proxy
-        rectangle = QGraphicsRectItem(proxy.x(), proxy.y(),
-        # rectangle = QGraphicsRectItem(100, 100,
-                proxy.rect().width() + 1, proxy.rect().height() + 1)
+        rectangle = RectItem(QRectF(proxy.x(), proxy.y(),
+                proxy.rect().width() + 1, proxy.rect().height() + 1))
         rectangle.setFlag(QGraphicsItem.ItemIsMovable, True)
         rectangle.setFlag(QGraphicsItem.ItemIsSelectable, True)
         self.scene.addItem(rectangle)
+
         # set parent
         proxy.setParentItem(rectangle)
 
+class Proxy(QGraphicsProxyWidget):
 
+    def __init__(self, zValuesList, parent=None):
+        QGraphicsProxyWidget.__init__(self)
+
+        self.zValuesList = zValuesList
+        self.z = 0
+
+    def focusInEvent(self, event):
+        self.z += 0.1
+        self.setZValue(self.z)
+        print(self.zValue())
+
+
+class RectItem(QGraphicsRectItem):
+
+    def __init__(self, rect):
+        QGraphicsRectItem.__init__(self)
+
+        self.rectan = rect
+    #
+    # def mousePressEvent(self, event):
+    #     super(Proxy, self).mousePressEvent(event)
+    #     print('RectItem')
+
+    def boundingRect(self):
+        return self.rectan
+
+    def event(self, event):
+        print(event)
+
+method_list = [func for func in dir(RectItem) if not func.startswith("__")]
+
+for method in method_list:
+    print(method)
 
 # class Card(QGraphicsObject):
 #
