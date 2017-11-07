@@ -75,7 +75,7 @@ def get_languagePair():
     # reduce to english terms
     for key, value in language_dict.items():
         if language1 in value:
-            language1 = key            
+            language1 = key
 
     for key, value in language_dict.items():
         if language2 in value:
@@ -121,12 +121,15 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.set_signals_and_slots()
         self.adjust_table_headers()
 
-        self.memoWidget = Memory(self.memoWidget.geometry(), self.tab3)
-        self.make_cards_dragable()
+        self.startMemoryButton.pressed.connect(self.start_memory)
 
-    def make_cards_dragable(self):
-        # self.label_1.setFlag(QGraphicsItem.ItemIsMovable)
-        pass
+    def start_memory(self):
+        self.startMemoryButton.setParent(None)
+        self.startMemoryButton.deleteLater()
+        self.startMemoryButton = None
+
+        self.gridLayout.addWidget(Memory(QRect(10, 10, 900, 550),
+                                            self.dictionary, self.tab3))
 
     def adjust_table_headers(self):
 

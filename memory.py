@@ -4,6 +4,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
+import numpy
 import sys
 
 class Memory(QWidget):
@@ -11,8 +12,19 @@ class Memory(QWidget):
     grid = None
     scene = None
 
-    def __init__(self, geometry, parent=None):
+    def __init__(self, geometry, vocabs, parent=None):
         super(Memory, self).__init__(parent=parent)
+
+        self.geometry = geometry
+        self.vocabs = vocabs
+
+        self.set_layout()
+        self.cards = list()
+        self.add_cards()
+
+    def set_layout(self):
+
+        geometry = self.geometry
 
         self.layout = QGridLayout(self)
 
@@ -25,124 +37,73 @@ class Memory(QWidget):
 
         self.layout.addWidget(self.view)
 
-        self.zValueList = list()
-
-        self.cards = list()
-        self.add_cards()
-
     def add_cards(self):
 
-        w = 220
-        h = 110
+        voc = list(numpy.random.choice(list(self.vocabs.keys()), size = 8, replace = False))
+        vocb = voc[:]
+
+        for v in vocb:
+            voc.append(self.vocabs[v][0])
+
+        numpy.random.shuffle(voc)
+
+        w = 200
+        h = 100
+
+        k = 0
 
         for i in range(4):
             x = i*w
             for j in range(4):
                 y = j*h
-                rect = QRectF(x+35 + i*30, y+50 + j*40, w, h)
-                self.make_proxy(rect)
+                rect = QRectF(x+15 + i*30, y+30 + j*40, w, h)
+                self.make_proxy(rect, voc[k])
+                k += 1
 
-    def make_proxy(self, rect):
+    def make_proxy(self, rect, voc):
 
-        label = QLabel('Hallo')
+        label = QLabel('{}'.format(voc))
         label.setAlignment(Qt.AlignCenter | Qt.AlignCenter)
 
         # create proxy
-        # proxy = QGraphicsProxyWidget()
-        proxy = Proxy(self.zValueList)
+        proxy = Proxy()
         proxy.setWidget(label)
         proxy.setGeometry(rect)
-        proxy.setFlag(QGraphicsItem.ItemStacksBehindParent, True)
-
-
         self.scene.addItem(proxy)
 
-        self.zValueList.append(proxy.zValue())
-
         # create parent grabby item, sized a bit bigger than proxy
-        rectangle = RectItem(QRectF(proxy.x(), proxy.y(),
-                proxy.rect().width() + 1, proxy.rect().height() + 1))
-        rectangle.setFlag(QGraphicsItem.ItemIsMovable, True)
-        rectangle.setFlag(QGraphicsItem.ItemIsSelectable, True)
-        self.scene.addItem(rectangle)
+        card = RectItem(rect, self.cards)
+        card.setFlag(QGraphicsItem.ItemIsMovable, True)
+        card.setFlag(QGraphicsItem.ItemIsFocusable, True)
+        self.scene.addItem(card)
+        self.cards.append(card)
 
         # set parent
-        proxy.setParentItem(rectangle)
+        proxy.setParentItem(card)
+
 
 class Proxy(QGraphicsProxyWidget):
 
-    def __init__(self, zValuesList, parent=None):
+    def __init__(self, parent=None):
         QGraphicsProxyWidget.__init__(self)
 
-        self.zValuesList = zValuesList
-        self.z = 0
-
     def focusInEvent(self, event):
-        self.z += 0.1
-        self.setZValue(self.z)
-        print(self.zValue())
-
+        self.parentItem().raise_zValue()
 
 class RectItem(QGraphicsRectItem):
 
-    def __init__(self, rect):
-        QGraphicsRectItem.__init__(self)
+    def __init__(self, rect, cards, parent=None):
+        QGraphicsRectItem.__init__(self, rect, parent=parent)
+        self.cards = cards
 
-        self.rectan = rect
-    #
-    # def mousePressEvent(self, event):
-    #     super(Proxy, self).mousePressEvent(event)
-    #     print('RectItem')
-
-    def boundingRect(self):
-        return self.rectan
-
-    def event(self, event):
-        print(event)
-
-method_list = [func for func in dir(RectItem) if not func.startswith("__")]
-
-for method in method_list:
-    print(method)
-
-# class Card(QGraphicsObject):
-#
-#     def __init__(self, text, rectangle, parent = None):
-#         super(Card, self).__init__(parent=parent)
-#
-#         self.text = text
-#
-#         self.rectangle = rectangle
-#
-#         self.set_gradient(QColor(200, 200, 200, 170))
-#         self.pen = QPen(Qt.NoPen)
-#         self.brush = QBrush(self.gradient)
-#
-#         self.setFlag(QGraphicsItem.ItemIsMovable)
-#
-#     def boundingRect(self):
-#         return self.rectangle
-#
-#     def set_gradient(self, color):
-#         """Sets the color gradient of the edge"""
-#
-#         self.gradient = QLinearGradient(self.rectangle.bottomLeft(),
-#                                         self.rectangle.topRight())
-#         self.gradient.setColorAt(0.7, color)
-#         self.gradient.setColorAt(1, color.darker(20))
-#
-#         return self.gradient
-#
-#     def paint(self, painter, option, widget):
-        # painter.setBrush(self.brush)
-        # painter.setPen(self.pen)
-        # painter.drawRoundedRect(self.rectangle, 8, 8)
-        # painter.drawText(self.boundingRect(), self.text)
+    def raise_zValue(self):
+        z = [ item.zValue() for item in self.cards ]
+        self.setZValue(max(z) + 0.1)
 
 def main():
 
     app = QApplication(sys.argv)
-    form = Memory(QRect(10, 10, 1051, 661))
+    form = Memory(QRect(10, 10, 900, 550))
 
     # place application in screen center
     screenGeometry = QApplication.desktop().screenGeometry()
@@ -155,3 +116,15 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+'''
+Probably this is because the flag is a convenience function that uses the
+original `boundingRect` method of the `QGraphicsRectItem` class and since I
+redefine this function the behavior is faulty.
+'''
+
+
+# print all methods
+# method_list = [func for func in dir(RectItem) if not func.startswith("__")]
+# for method in method_list:
+#     print(method)
