@@ -21,6 +21,9 @@ class Memory(QWidget):
         self.set_layout()
         self.cards = list()
         self.add_cards()
+        self.view.add_cards(self.cards)
+
+        self.view.setMouseTracking(True)
 
     def set_layout(self):
 
@@ -28,11 +31,11 @@ class Memory(QWidget):
 
         self.layout = QGridLayout(self)
 
-        self.scene = QGraphicsScene(self)
+        self.scene = Scene(self)
         self.scene.setSceneRect(geometry.x(), geometry.y(), geometry.width(), geometry.height())
         self.scene.setBackgroundBrush(Qt.white)
 
-        self.view = QGraphicsView()
+        self.view = View()
         self.view.setScene(self.scene)
 
         self.layout.addWidget(self.view)
@@ -57,10 +60,10 @@ class Memory(QWidget):
             for j in range(4):
                 y = j*h
                 rect = QRectF(x+15 + i*30, y+30 + j*40, w, h)
-                self.make_proxy(rect, voc[k])
+                self.make_proxy(k, rect, voc[k])
                 k += 1
 
-    def make_proxy(self, rect, voc):
+    def make_proxy(self, k, rect, voc):
 
         label = QLabel('{}'.format(voc))
         label.setAlignment(Qt.AlignCenter | Qt.AlignCenter)
@@ -72,7 +75,7 @@ class Memory(QWidget):
         self.scene.addItem(proxy)
 
         # create parent grabby item, sized a bit bigger than proxy
-        card = RectItem(rect, self.cards)
+        card = Card(k, rect, self.cards)
         card.setFlag(QGraphicsItem.ItemIsMovable, True)
         card.setFlag(QGraphicsItem.ItemIsFocusable, True)
         self.scene.addItem(card)
@@ -81,6 +84,52 @@ class Memory(QWidget):
         # set parent
         proxy.setParentItem(card)
 
+class Scene(QGraphicsScene):
+
+    def __init__(self, parent=None):
+        QGraphicsScene.__init__(self)
+
+    def mousePressEvent(self, event):
+        QGraphicsScene.mousePressEvent(self, event)
+        print(event.type())
+
+        card_list = [item.parentItem() for item in self.items()]
+        for card in card_list:
+            if isinstance(card, Card):
+                print(card.ID)
+                print(card.boundingRect())
+
+    def mouseReleaseEvent(self, event):
+        QGraphicsScene.mouseReleaseEvent(self, event)
+        print(event.type())
+
+class View(QGraphicsView):
+
+    def __init__(self, parent=None):
+        QGraphicsView.__init__(self)
+
+        self.cards = list()
+
+    def add_cards(self, cards):
+        self.cards = cards
+
+    def event(self, event):
+        QGraphicsView.event(self, event)
+        # print(event)
+        return True
+
+    def mouseMoveEvent(self, event):
+        QGraphicsView.mouseMoveEvent(self, event)
+
+        for card in self.cards:
+            print(card.ID)
+            rect = card.boundingRect()
+            if rect.contains(QMouseEvent.globalPos(event)):
+                print('inside')
+            else:
+                print('outside')
+
+        # print(QMouseEvent.globalPos(event))
 
 class Proxy(QGraphicsProxyWidget):
 
@@ -90,15 +139,35 @@ class Proxy(QGraphicsProxyWidget):
     def focusInEvent(self, event):
         self.parentItem().raise_zValue()
 
-class RectItem(QGraphicsRectItem):
+    # def event(self, event):
+    #     QGraphicsProxyWidget.event(self, event)
+    #     print(event.type())
+    #     return True
+    #
+    # def ungrabMouseEvent(self, event):
+    #     # QGraphicsProxyWidget.mouseReleaseEvent(self, event)
+    #     print(event.type())
+    #     # return True
 
-    def __init__(self, rect, cards, parent=None):
+class Card(QGraphicsRectItem):
+
+    def __init__(self, ID, rect, cards, parent=None):
         QGraphicsRectItem.__init__(self, rect, parent=parent)
+
         self.cards = cards
+        self.ID = ID
 
     def raise_zValue(self):
         z = [ item.zValue() for item in self.cards ]
         self.setZValue(max(z) + 0.1)
+
+    def go_back(self):
+        self.set.position(init_pos[0], init_pos[1])
+
+    # def event(self, event):
+    #     QGraphicsRectItem.event(self, event)
+    #     print(event)
+    #     return True
 
 def main():
 
