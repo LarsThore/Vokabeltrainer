@@ -128,7 +128,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.startMemoryButton.deleteLater()
         self.startMemoryButton = None
 
-        self.gridLayout.addWidget(Memory(QRect(10, 10, 900, 550),
+        self.gridLayout.addWidget(Memory(QRect(10, 10, 1065, 685),
                                             self.dictionary, self.tab3))
 
     def adjust_table_headers(self):
@@ -285,18 +285,18 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         e = numpy.random.randint(len(self.dictionary))
 
         # fill the first text-edit-box with a word from the dictionary
-        self.lineEdit_1.setText(self.dictKeys[e])
+        self.lineEdit_1.setText(list(self.dictionary.keys())[e])
         self.lineEdit_2.clear()
 
         # show the level value
-        values = self.dictionary[self.dictKeys[e]]
+        values = self.dictionary[list(self.dictionary.keys())[e]]
         level_text = str(values[1])
         self.levelText.setText(level_text)
 
         # set focus on second line edit
         self.lineEdit_2.setFocus()
 
-        return self.dictKeys[e]
+        return list(self.dictionary.keys())[e]
 
     def correct_answer_given(self, word2, word3):
         '''Handles all the stuff which needs to be done if the answer was
@@ -374,12 +374,12 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
                             translation = line[1]
                             level = int(line[2])
                             self.dictionary[word1] = [translation, level]
-                            self.dictKeys.append(word1)
+                            # self.dictKeys.append(word1)
                         elif len(line) == 2:
                             word1 = line[0]
                             translation = line[1]
                             self.dictionary[word1] = [translation, 1]
-                            self.dictKeys.append(word1)
+                            # self.dictKeys.append(word1)
 
             except Exception as msg:
                 print ("File not imported.\n The error is\n{}".format(msg))

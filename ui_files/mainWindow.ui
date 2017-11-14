@@ -179,8 +179,13 @@ right answer</string>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
+      <property name="font">
+       <font>
+        <pointsize>13</pointsize>
+       </font>
+      </property>
       <property name="alignment">
-       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
       </property>
      </widget>
      <widget class="QLineEdit" name="lineEdit_2">
@@ -198,8 +203,13 @@ right answer</string>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
+      <property name="font">
+       <font>
+        <pointsize>13</pointsize>
+       </font>
+      </property>
       <property name="alignment">
-       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
       </property>
      </widget>
      <widget class="QPushButton" name="startLearningButton">
@@ -512,6 +522,9 @@ right answer</string>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout">
+        <property name="spacing">
+         <number>6</number>
+        </property>
         <item row="0" column="0">
          <widget class="QPushButton" name="startMemoryButton">
           <property name="sizePolicy">
