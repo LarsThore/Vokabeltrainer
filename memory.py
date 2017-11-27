@@ -110,28 +110,58 @@ class View(QGraphicsView):
         QGraphicsView.__init__(self)
 
         self.cards = list()
+        self.start_geometry = QRectF()
 
     def add_cards(self, cards):
 
         self.cards = cards
 
+    def mousePressEvent(self, event):
+        QGraphicsView.mousePressEvent(self, event)
+
+        print('somthing')
+
+        items = self.items(event.pos())
+
+        for item in items:
+            if isinstance(item, Proxy):
+                self.start_geometry = item.geometry()
+
+
     def mouseReleaseEvent(self, event):
         QGraphicsView.mouseReleaseEvent(self, event)
 
         items = self.items(event.pos())
+        # for function in dir(items[0]):
+        #     if 'set' in function:
+        #         print (function)
+
 
         i = 0
         if len(items) > 2:
             for item in items:
                 if isinstance(item, Proxy):
-                    print(item)
+                    proxy = item
                     if i == 0:
-                        item0 = item.widget()
-                        text = item0.text()
+                        label0 = proxy.widget()
+                        text = label0.text()
+                        proxy0 = proxy
+                        # print(label0)
                         i += 1
                     else:
-                        if item.widget().releaseAction(text):
-                            item0.change_style_green()
+                        proxy1 = proxy
+                        label1 = proxy1.widget()
+                        # print(label1)
+                        print('1', proxy1.widget())
+                        if proxy1.widget().releaseAction(text):
+                            label0.change_style_green()
+                        else:
+                            label0.change_style_red()
+                            proxy0.setGeometry(self.start_geometry)
+                            proxy0.widget().setGeometry(int(self.start_geometry.x()),
+                                                      int(self.start_geometry.y()),
+                                                      int(self.start_geometry.width()),
+                                                      int(self.start_geometry.height()))
 
 class Label(QLabel):
 
@@ -147,7 +177,12 @@ class Label(QLabel):
 
     def change_style_green(self):
 
-        self.setStyleSheet("QLabel { background-color : green }")
+        self.setStyleSheet("QLabel { background-color : lightGreen }")
+        self.update()
+
+    def change_style_red(self):
+
+        self.setStyleSheet("QLabel { background-color : Red }")
         self.update()
 
     def releaseAction(self, text):
@@ -156,6 +191,7 @@ class Label(QLabel):
             self.change_style_green()
             return True
         else:
+            self.change_style_red()
             return False
 
 class Proxy(QGraphicsProxyWidget):
@@ -165,6 +201,9 @@ class Proxy(QGraphicsProxyWidget):
 
     def focusInEvent(self, event):
         self.parentItem().raise_zValue()
+
+    def go_back(self):
+        pass
 
 class Card(QGraphicsRectItem):
 

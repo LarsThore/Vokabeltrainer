@@ -66,31 +66,31 @@ def get_languagePair():
                      'English': ['english', 'English', 'Englisch', 'englisch'] }
 
     try:
-        language1 = sys.argv[1]
-        language2 = sys.argv[2]
+        l1 = sys.argv[1]
+        l2 = sys.argv[2]
     except IndexError:
-        language1 = input('Please type in the language you know (your mother tongue): ')
-        language2 = input('Now, please type in the language you want to learn: ')
+        l1 = input('Please type in the language you know (your mother tongue): ')
+        l2 = input('Now, please type in the language you want to learn: ')
 
     # reduce to english terms
     for key, value in language_dict.items():
-        if language1 in value:
-            language1 = key
+        if l1 in value:
+            l1 = key
 
     for key, value in language_dict.items():
-        if language2 in value:
-            language2 = key
+        if l2 in value:
+            l2 = key
 
     # reduce possibilities of word pairs to three variants
-    if language2 == 'French':
-        language1, language2 = language2, language1
+    if l2 == 'French':
+        l1, l2 = l2, l1
 
-    if language1 == 'German':
-        language1, language2 = language2, language1
+    if l1 == 'German':
+        l1, l2 = l2, l1
 
-    languagePair = '{language1}_{language2}'.format(language1=language1, language2=language2)
+    languagePair = '{language1}_{language2}'.format(language1=l1, language2=l2)
 
-    return language1, language2, languagePair
+    return l1, l2, languagePair
 
 language1, language2, pair = get_languagePair()
 path = voc_logging(pair)
