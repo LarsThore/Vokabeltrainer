@@ -63,7 +63,9 @@ def get_languagePair():
     language_dict = {'French': ['french', 'French', 'Französisch', 'französisch',
                                                         'Francais', 'francais'],
                      'German': ['deutsch', 'Deutsch', 'German', 'german'],
-                     'English': ['english', 'English', 'Englisch', 'englisch'] }
+                     'English': ['english', 'English', 'Englisch', 'englisch'],
+                     'Persian': ['persian', 'Persian', 'Persisch', 'persich',
+                                 'Iranian', 'iranian', 'Iranisch', 'iranisch'] }
 
     try:
         l1 = sys.argv[1]
@@ -80,6 +82,12 @@ def get_languagePair():
     for key, value in language_dict.items():
         if l2 in value:
             l2 = key
+
+    # standardize program names
+    # l1_l2 = sorted([l1, l2])
+    #
+    # l1 = l1_l2[0]
+    # l2 = l1_l2[1]
 
     # reduce possibilities of word pairs to three variants
     if l2 == 'French':
@@ -128,7 +136,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.startMemoryButton.deleteLater()
         self.startMemoryButton = None
 
-        self.gridLayout.addWidget(Memory(QRect(10, 10, 1065, 685),
+        self.gridLayout.addWidget(Memory(QRect(10, 10, 1065, 685), self,
                                             self.dictionary, self.tab3))
 
     def adjust_table_headers(self):
@@ -221,6 +229,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         dummy = self.mainTable.rowCount() + 1   # for correct indexing in insert_item method
 
         self.add_to_table([dummy, voc1, voc2, initLevel])
+        self.dictionary[voc1] = voc2
 
         self.voc1LineEdit.clear()
         self.voc2LineEdit.clear()
