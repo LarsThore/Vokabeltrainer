@@ -4,10 +4,11 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-import numpy
+from numpy.random import choice,shuffle
 import sys
 
 import time as clocktime
+import copy
 
 dummy_dict = {'sea':['Meer', 1], 'ocean':['Ozean', 1], 'harbour':['Hafen', 1],
               'sea gull':['Möwe', 1], 'boat':['Boot', 1], 'shell':['Muschel', 1],
@@ -29,48 +30,88 @@ class Memory(QWidget):
         self.geometry = geometry
         self.vocabs = vocabs
 
-        self.set_layout()
+        self.size = 4
+
         self.cards = list()
         self.labels = list()
+        self.v_voc = dict()
+
+        self.voc_copy = copy.deepcopy(self.vocabs)
+
+        self.set_layout()
         self.add_cards()
+
         self.view.add_cards(self.cards)
-
         self.view.setMouseTracking(True)
-
-        [label.add_dict(self.vocabs) for label in self.labels]
 
     def set_layout(self):
 
         geometry = self.geometry
 
-        self.layout = QGridLayout(self)
+        self.gridLayoutWidget = QWidget(self)
+        self.gridLayoutWidget.setGeometry(QRect(0, 0, 1061, 681))
+        self.gridLayoutWidget.setObjectName("gridLayoutWidget")
+
+        self.layout = QGridLayout(self.gridLayoutWidget)
 
         self.scene = QGraphicsScene(self)
         self.scene.setSceneRect(geometry.x(), geometry.y(), geometry.width(), geometry.height())
         self.scene.setBackgroundBrush(Qt.white)
 
-        self.view = View(self, self.scene)
+        self.view = View(self, self.scene, self.size)
         self.view.setScene(self.scene)
 
         self.layout.addWidget(self.view)
 
+    def ask_for_restart(self):
+        self.restartMemoryButton = QPushButton(self.gridLayoutWidget)
+
+        # sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        # sizePolicy.setHorizontalStretch(0)
+        # sizePolicy.setVerticalStretch(0)
+        # sizePolicy.setHeightForWidth(self.restartMemoryButton.sizePolicy().hasHeightForWidth())
+        # self.restartMemoryButton.setSizePolicy(sizePolicy)
+        self.restartMemoryButton.setMaximumSize(QSize(300, 100))
+        font = QFont()
+        font.setPointSize(14)
+        self.restartMemoryButton.setFont(font)
+        self.restartMemoryButton.setObjectName("restartMemoryButton")
+        self.layout.addWidget(self.restartMemoryButton, 0, 0, 1, 1)
+
+        x = self.restartMemoryButton.geometry().x() + 200
+        self.restartMemoryButton.setGeometry(QRect(QPoint(x, 290), QSize(500, 100)))
+        self.restartMemoryButton.update()
+        self.restartMemoryButton.setText("Memory finished.\nKlick to restart.")
+
     def add_cards(self):
 
-        keys = list(numpy.random.choice(list(self.vocabs.keys()), size = 8, replace = False))
+        try:
+            # normal case
+            keys = list(choice(list(self.voc_copy.keys()), size=self.size, replace=False))
+        except ValueError:
+            # memory finshed
+            # self.ask_for_restart()
+            self.voc_copy = copy.deepcopy(self.vocabs)
+            keys = list(choice(list(self.voc_copy.keys()), size=self.size, replace=False))
+
         voc = keys[:]
 
         for key in keys:
-            value_list = self.vocabs[key]
-            for i in range(len(value_list)):
-                if isinstance(value_list[i], str):
-                    self.vocabs[key] = value_list[i]
+            value_list = self.voc_copy[key]
+            del self.voc_copy[key]
+
+            if isinstance(value_list, str):
+                self.v_voc[key] = value_list
+
+            else:
+                for i in range(len(value_list)):
+                    if isinstance(value_list[i], str):
+                        self.v_voc[key] = value_list[i]
 
         for key in keys:
-            voc.append(self.vocabs[key])
+            voc.append(self.v_voc[key])
 
-        print(voc)
-
-        numpy.random.shuffle(voc)
+        shuffle(voc)
 
         w = 200
         h = 100
@@ -80,13 +121,23 @@ class Memory(QWidget):
 
         k = 0
 
-        for i in range(4):
+        if self.size == 2:
+            n_x = n_y = 2
+        elif self.size == 4:
+            n_x = 4
+            n_y = 2
+        elif self.size == 8:
+            n_x = n_y = 4
+
+        for i in range(n_x):
             x = i*w
-            for j in range(4):
+            for j in range(n_y):
                 y = j*h
                 rect = QRectF(x + x_offset + i*30, y + y_offset + j*40, w, h)
                 self.make_proxy(k, rect, voc[k])
                 k += 1
+
+        [label.add_dict(self.v_voc) for label in self.labels]
 
     def make_proxy(self, k, rect, voc):
 
@@ -118,7 +169,7 @@ class Scene(QGraphicsScene):
 
 class View(QGraphicsView):
 
-    def __init__(self, memory, scene, parent=None):
+    def __init__(self, memory, scene, max_pairs, parent=None):
         QGraphicsView.__init__(self)
 
         self.memory = memory
@@ -128,6 +179,7 @@ class View(QGraphicsView):
         self.start_geometry = QRectF()
 
         self.pairs_found = 0
+        self.max_pairs = max_pairs
 
     def add_cards(self, cards):
 
@@ -170,11 +222,10 @@ class View(QGraphicsView):
                         else:
                             label0.change_style_red()
 
-        if self.pairs_found == 8:
+        if self.pairs_found == self.max_pairs:
             self.scene.clear()
+            self.memory.cards = []
             self.memory.add_cards()
-            # QTimer.singleShot(3000, self.scene.clear())
-            # QTimer.singleShot(3000, self.memory.add_cards())
             self.pairs_found = 0
 
 
