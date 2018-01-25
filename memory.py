@@ -30,7 +30,7 @@ class Memory(QWidget):
         self.geometry = geometry
         self.vocabs = vocabs
 
-        self.size = 4
+        self.size = 8
 
         self.cards = list()
         self.labels = list()
@@ -161,6 +161,7 @@ class Memory(QWidget):
 
         # set parent
         proxy.setParentItem(card)
+
 
 class Scene(QGraphicsScene):
 
