@@ -15,6 +15,7 @@ import csv          # import/export
 import numpy        # scientific computing
 import sqlite3      # tables
 
+from pair import Pair
 from memory import Memory
 
 # ------------- rcc and uic automation ----------------
@@ -65,7 +66,10 @@ def get_languagePair():
                      'German': ['deutsch', 'Deutsch', 'German', 'german'],
                      'English': ['english', 'English', 'Englisch', 'englisch'],
                      'Persian': ['persian', 'Persian', 'Persisch', 'persich',
-                                 'Iranian', 'iranian', 'Iranisch', 'iranisch'] }
+                                 'Iranian', 'iranian', 'Iranisch', 'iranisch'],
+                     'Mathematic': ['mathematic', 'Mathematic', 'mathematische', 
+                                     'Mathematische'], 
+                     'Definitions': ['definitions', 'Definition', 'Definitionen']}
 
     try:
         l1 = sys.argv[1]
@@ -119,8 +123,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.language2 = str(language2)
 
         # initialize dictionary
-        self.dictionary = {}
-        self.dictKeys = list(self.dictionary.keys())
+        self.pair_list = list()
 
         self.make_table()
         self.load_settings()
@@ -137,7 +140,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.startMemoryButton = None
 
         self.gridLayout.addWidget(Memory(QRect(10, 10, 1065, 685), self,
-                                            self.dictionary, self.tab3))
+                                            self.pair_list, self.tab3))
 
     def adjust_table_headers(self):
 
@@ -180,13 +183,14 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.actionImport.triggered.connect(self.import_data)
         self.startLearningButton.clicked.connect(self.get_next_word)
 
+        self.continueButton.clicked.connect(self.get_next_word)
+        self.continueButton.pressed.connect(self.get_next_word)
+
         self.howeverTrueButton.clicked.connect(lambda:
-                self.set_answer_true(self.dictionary[self.lineEdit_1.text()],
-                self.lineEdit_1.text()))
+                self.set_answer_true(self.lineEdit_1.text()))
 
         self.lineEdit_2.returnPressed.connect(lambda:
-                self.check_entry(self.dictionary[self.lineEdit_1.text()],
-                self.lineEdit_2.text(), self.lineEdit_1.text()))
+                self.check_entry(self.lineEdit_1.text(), self.lineEdit_2.text()))
 
     def load_settings(self):
         '''Loads the initial settings for the application. Sets the mainTable
@@ -206,7 +210,8 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
 
         for row_inx, row in enumerate(allRows):
             self.insert_item(self.mainTable, row_inx, row)
-            self.dictionary[row[1]] = [row[2], int(row[3])]
+            pair = Pair(row[1], row[2], self.language1, self.language2, row[3])
+            self.pair_list.append(pair)
 
     def insert_item(self, table, row_inx, row):
 
@@ -226,10 +231,14 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         voc2 = self.voc2LineEdit.text()
 
         initLevel = 1       # integer !
+
+        pair = Pair(voc1, voc2, self.language1, self.language2, 1)
+
         dummy = self.mainTable.rowCount() + 1   # for correct indexing in insert_item method
 
         self.add_to_table([dummy, voc1, voc2, initLevel])
-        self.dictionary[voc1] = voc2
+
+        self.pair_list.append(pair)
 
         self.voc1LineEdit.clear()
         self.voc2LineEdit.clear()
@@ -245,25 +254,23 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         # commit changes to Database
         # first parameter automatically defined by sq engine (id number)
         parameters = (None, row[1], row[2], row[3])
-        self.dbCursor.execute('''INSERT INTO Main VALUES (?, ?, ?, ?)''',
-         parameters)
+        self.dbCursor.execute('''INSERT INTO Main VALUES (?, ?, ?, ?)''', parameters)
         self.dbConn.commit()
 
-    def update_level(self, language1, language2, level):
+    def update_level_in_table(self):
         '''Updates the level in table after correct answer.'''
 
         # commit changes to Database
-        parameters = (level, language1)
+        parameters = (self.current_pair.level, self.current_pair.word1)
         self.dbCursor.execute(
         '''UPDATE Main SET tableLevel = ? WHERE language_one = ?''', parameters)
 
         self.dbConn.commit()
 
-
         # update table in application
         # make a tuple because sqlite needs a tuple as input
-        language1_tuple = (language1, )
-        self.dbCursor.execute('''SELECT * FROM Main WHERE language_one = ?''', language1_tuple)
+        word1_tuple = (self.current_pair.word1, )
+        self.dbCursor.execute('''SELECT * FROM Main WHERE language_one = ?''', word1_tuple)
 
         row = self.dbCursor.fetchone()
         print (row, type(row))
@@ -281,8 +288,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         if currentRow > -1:
             # make a tuple because sqlite needs a tuple as input
             currentVoc = (self.mainTable.item(currentRow, 0).text(), )
-            self.dbCursor.execute('''DELETE FROM Main WHERE Language_One = ?''',
-             currentVoc)
+            self.dbCursor.execute('''DELETE FROM Main WHERE language_one = ?''', currentVoc)
             self.dbConn.commit()
             self.mainTable.removeRow(currentRow)
 
@@ -291,28 +297,28 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         line edit.'''
 
         # choose a random number to select a certain key from the dictionary
-        # e = numpy.random.randint(len(self.dictionary))
-        text = numpy.random.choice(list(self.dictionary.keys()))
+        self.current_pair = numpy.random.choice(self.pair_list)
+        text = self.current_pair.word1
 
         # fill the first text-edit-box with a word from the dictionary
-        # self.lineEdit_1.setText(list(self.dictionary.keys())[e])
         self.lineEdit_1.setText(text)
         self.lineEdit_2.clear()
 
         # show the level value
-        values = self.dictionary[text]
-        level_text = str(values[1])
-        self.levelText.setText(level_text)
+        level = self.current_pair.level
+        self.levelText.setText(str(level))
 
         # set focus on second line edit
         self.lineEdit_2.setFocus()
 
         return text
 
-    def correct_answer_given(self, word2, word3):
+    def correct_answer_given(self, word2, word1):
         '''Handles all the stuff which needs to be done if the answer was
         correct'''
-        self.get_next_word()
+
+        self.current_pair.level += 1
+        self.update_level_in_table()
 
         # update line edits and labels
         self.lineEdit_2.clear()
@@ -322,42 +328,34 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         count += 1
         self.vocabsLearned.setText(str(count))
 
-        # update level
-        values = self.dictionary[word3]
-        level = values[1]
-        new_level = level + 1
-        self.dictionary[word3] = [word2, new_level]
-        self.update_level(word3, word2, new_level)
+        self.get_next_word()
 
-    def check_entry(self, word1, word2, word3):
+    def check_entry(self, word1, word2):
         '''Returns True if the word1 and word2 are a key-value-pair and False
         if not.'''
+
         # extract correct word from the list in dictionary according to
         # first line edit -- second language -- correct word
-        word1 = str(word1[0])
+        word1 = str(word1)
         word1 = word1.strip('\t')
         # the word in second line edit -- second language -- tested word
         word2 = str(word2)
-        # the respective word in - first language
-        word3 = str(word3)
 
         print(word1, word2)
 
-        if word1 == word2:
+        if self.current_pair.word2 == word2:
             # correct answer
             print (True)
             self.assertionLabel.setText("Correct!")
-            self.correct_answer_given(word2, word3)
+            self.correct_answer_given(word2, word1)
             return True
         else:
             # incorrect answer
             print (False)
-            self.assertionLabel.setText("Unfortunately wrong!")
-            self.solutionLabel.setText(word1)
+            self.assertionLabel.setText("Unfortunately wrong...")
+            self.solutionLabel.setText(self.current_pair.word2)
             self.lineEdit_2.setFocus()
             self.lineEdit_2.selectAll()
-            self.continueButton.clicked.connect(self.get_next_word)
-            self.continueButton.pressed.connect(self.get_next_word)
             return False
 
     def import_data(self):
@@ -369,9 +367,9 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         Column 3: Level (1-5)
         '''
 
-        inputfile = QFileDialog.getOpenFileName(parent = None, caption =
-        "Import database to a Application", directory = ".", filter =
-        "PyVocTrainer CSV (*.txt)")
+        inputfile = QFileDialog.getOpenFileName(parent = None,
+            caption = "Import database to a Application", directory = ".",
+            filter = "PyVocTrainer CSV (*.txt)")
 
         print (inputfile[0])
         if inputfile[0]:
@@ -380,17 +378,10 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
                     reader = csv.reader(infile, delimiter = '\t')
                     for line in reader:
                         print (line)
-                        if len(line) == 3:
-                            word1 = line[0]
-                            translation = line[1]
-                            level = int(line[2])
-                            self.dictionary[word1] = [translation, level]
-                            # self.dictKeys.append(word1)
-                        elif len(line) == 2:
-                            word1 = line[0]
-                            translation = line[1]
-                            self.dictionary[word1] = [translation, 1]
-                            # self.dictKeys.append(word1)
+                        word1 = line[0]
+                        translation = line[1]
+                        level = int(line[2]) if len(line)==3 else 1
+                        pair = Pair(word1, translation, self.language1, self.language2, level)
 
             except Exception as msg:
                 print ("File not imported.\n The error is\n{}".format(msg))
@@ -398,29 +389,32 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         else:
             pass
 
-        for entry in self.dictionary:
-            liste = self.dictionary[entry]
-            translation = liste[0]
-            level = liste[1]
-            self.add_to_table([entry, translation, level])
-            print ('{}\t{}\t{}'.format(entry, translation, level))
+        for pair in self.pair_list:
+            self.add_to_table([pair.word1, pair.word2, pair.level])
+            print ('{}\t{}\t{}'.format(pair.word1, pair.word2, pair.level))
 
     def export_action_triggered(self):
         '''Database export handler.'''
         pass
 
-    def set_answer_true(self, word2, word3):
+    def set_answer_true(self, word1):
         '''Carries out basically the same procedure as if the answer were given
         correctly at the beginning
+        '''
 
-        word2 and word3 according to function check_entry'''
+        word1 = str(word1)
 
-        word2 = str(word2)
-        word3 = str(word3)
+        # pair = [e.word2 == True for e in pair_list]
+        ### Filter one liner ### filter(lambda x: condition(x), some_list)
+        pair = list(filter(lambda x: x.word1 == word1, self.pair_list))
+        pair = pair[0]
+
+        print(pair)
 
         self.assertionLabel.setText(" ")
-        self.correct_answer_given(word2, word3)
+        self.correct_answer_given(pair)
         return True
+
 
 def main():
     QCoreApplication.setApplicationName('PyVocTrainer')
@@ -444,12 +438,10 @@ if __name__ == '__main__':
     main()
 
 
-# TODO: Save levels correctly (should work fine)
 # TODO: Level is not updated immediately but only after restart
-# TODO: Use sql dictionary instead of manual dictionary
-# TODO: Include Tooltipps
-# TODO: Split tabs into different windows
-# TODO: Make Widget stretchable
 # TODO: mehr Wörter der unteren Level zur Abfrage auswählen
+# TODO: wechseln können welche Sprache abgefragt wird
+# TODO: (Include Tooltipps)
+# TODO: (Split tabs into different windows)
 # TODO: introduce counting with bars
-# TODO: choose to learn english or french --- DONE
+# TODO: Make Widget stretchable

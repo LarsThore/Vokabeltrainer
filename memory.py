@@ -10,16 +10,29 @@ import sys
 import time as clocktime
 import copy
 
+from pair import Pair
+
 dummy_dict = {'sea':['Meer', 1], 'ocean':['Ozean', 1], 'harbour':['Hafen', 1],
               'sea gull':['Möwe', 1], 'boat':['Boot', 1], 'shell':['Muschel', 1],
               'to sail':['segeln', 1], 'wave':['Welle', 1]}
+
+dummy_list = list()
+
+dummy_list.append(Pair('sea', 'Meer', 'english', 'german', 1))
+dummy_list.append(Pair('ocean', 'Ozean', 'english', 'german', 1))
+dummy_list.append(Pair('harbour', 'Hafen', 'english', 'german', 1))
+dummy_list.append(Pair('sea gull', 'Möwe', 'english', 'german', 1))
+dummy_list.append(Pair('boat', 'Boot', 'english', 'german', 1))
+dummy_list.append(Pair('shell', 'Muschel', 'english', 'german', 1))
+dummy_list.append(Pair('to sail', 'segeln', 'english', 'german', 1))
+dummy_list.append(Pair('wave', 'Welle', 'english', 'german', 1))
 
 class Memory(QWidget):
 
     grid = None
     scene = None
 
-    def __init__(self, geometry, app=None, vocabs=dummy_dict, parent=None):
+    def __init__(self, geometry, app=None, vocabs=dummy_list, parent=None):
         super(Memory, self).__init__(parent=parent)
 
         if app == None:
@@ -28,15 +41,14 @@ class Memory(QWidget):
             self.app = app
 
         self.geometry = geometry
-        self.vocabs = vocabs
+        self.pair_list = vocabs
 
         self.size = 8
 
         self.cards = list()
         self.labels = list()
-        self.v_voc = dict()
 
-        self.voc_copy = copy.deepcopy(self.vocabs)
+        self.voc_copy = copy.deepcopy(self.pair_list)
 
         self.set_layout()
         self.add_cards()
@@ -87,31 +99,22 @@ class Memory(QWidget):
 
         try:
             # normal case
-            keys = list(choice(list(self.voc_copy.keys()), size=self.size, replace=False))
+            self.v_voc = list()
+            pairs = list(choice(self.voc_copy, size=self.size, replace=False))
+            print('i')
+            
         except ValueError:
             # memory finshed
             # self.ask_for_restart()
-            self.voc_copy = copy.deepcopy(self.vocabs)
-            keys = list(choice(list(self.voc_copy.keys()), size=self.size, replace=False))
+            self.voc_copy = copy.deepcopy(self.pair_list)
+            pairs = list(choice(self.voc_copy, size=self.size, replace=False))
 
-        voc = keys[:]
+        for pair in pairs:
+            self.v_voc.append(pair.word1)
+            self.v_voc.append(pair.word2)
+            self.voc_copy.remove(pair)
 
-        for key in keys:
-            value_list = self.voc_copy[key]
-            del self.voc_copy[key]
-
-            if isinstance(value_list, str):
-                self.v_voc[key] = value_list
-
-            else:
-                for i in range(len(value_list)):
-                    if isinstance(value_list[i], str):
-                        self.v_voc[key] = value_list[i]
-
-        for key in keys:
-            voc.append(self.v_voc[key])
-
-        shuffle(voc)
+        shuffle(self.v_voc)
 
         w = 200
         h = 100
@@ -134,10 +137,10 @@ class Memory(QWidget):
             for j in range(n_y):
                 y = j*h
                 rect = QRectF(x + x_offset + i*30, y + y_offset + j*40, w, h)
-                self.make_proxy(k, rect, voc[k])
+                self.make_proxy(k, rect, self.v_voc[k])
                 k += 1
 
-        [label.add_dict(self.v_voc) for label in self.labels]
+        [label.add_pair_list(self.pair_list) for label in self.labels]
 
     def make_proxy(self, k, rect, voc):
 
@@ -236,11 +239,11 @@ class Label(QLabel):
         QLabel.__init__(self, string, parent=parent)
 
         self.setStyleSheet("QLabel { background-color : lightgray }")
-        self.dict = dict()
+        self.pair_list = list()
 
-    def add_dict(self, dict_):
+    def add_pair_list(self, pair_list):
 
-        self.dict = dict_
+        self.pair_list = pair_list
 
     def change_style_white(self):
 
@@ -259,12 +262,22 @@ class Label(QLabel):
 
     def releaseAction(self, text):
 
-        if self.dict.get(text) == self.text() or self.dict.get(self.text()) == text:
+        a = list(filter(lambda pair: pair.word1 == text or pair.word2 == text, self.pair_list))
+        b = list(filter(lambda pair: pair.word1 == self.text() or pair.word2 == self.text(), self.pair_list))
+
+        if a == b:
             self.change_style_green()
             return True
         else:
             self.change_style_red()
             return False
+
+        # if self.dict.get(text) == self.text() or self.dict.get(self.text()) == text:
+        #     self.change_style_green()
+        #     return True
+        # else:
+        #     self.change_style_red()
+        #     return False
 
 class Proxy(QGraphicsProxyWidget):
 
