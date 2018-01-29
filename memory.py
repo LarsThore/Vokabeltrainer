@@ -4,7 +4,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-from numpy.random import choice,shuffle
+from numpy.random import choice, shuffle
 import sys
 
 import time as clocktime
@@ -102,7 +102,7 @@ class Memory(QWidget):
             self.v_voc = list()
             pairs = list(choice(self.voc_copy, size=self.size, replace=False))
             print('i')
-            
+
         except ValueError:
             # memory finshed
             # self.ask_for_restart()

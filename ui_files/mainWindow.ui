@@ -30,7 +30,7 @@
      </sizepolicy>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab1">
      <attribute name="title">
@@ -307,8 +307,8 @@ right answer</string>
      <widget class="QLabel" name="vocabsLearnedLabel">
       <property name="geometry">
        <rect>
-        <x>60</x>
-        <y>40</y>
+        <x>20</x>
+        <y>120</y>
         <width>201</width>
         <height>81</height>
        </rect>
@@ -348,8 +348,8 @@ right answer</string>
      <widget class="QLabel" name="vocabsLearned">
       <property name="geometry">
        <rect>
-        <x>320</x>
-        <y>60</y>
+        <x>280</x>
+        <y>140</y>
         <width>51</width>
         <height>50</height>
        </rect>
@@ -378,6 +378,101 @@ right answer</string>
       </property>
       <property name="text">
        <string>0</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="language2Button">
+      <property name="geometry">
+       <rect>
+        <x>120</x>
+        <y>60</y>
+        <width>160</width>
+        <height>36</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Language2</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="language1Button">
+      <property name="geometry">
+       <rect>
+        <x>120</x>
+        <y>20</y>
+        <width>160</width>
+        <height>36</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Language1</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+      <property name="checked">
+       <bool>false</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="languageBothButton">
+      <property name="geometry">
+       <rect>
+        <x>290</x>
+        <y>40</y>
+        <width>160</width>
+        <height>36</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Both</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="vocabsLearnedLabel_2">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>30</y>
+        <width>91</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>50</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>250</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="text">
+       <string>Ask for:</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>

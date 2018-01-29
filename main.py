@@ -18,6 +18,8 @@ import sqlite3      # tables
 from pair import Pair
 from memory import Memory
 
+from numpy.random import choice
+
 # ------------- rcc and uic automation ----------------
 # (from Peter Bouda: PyQt und PySide)
 
@@ -67,8 +69,8 @@ def get_languagePair():
                      'English': ['english', 'English', 'Englisch', 'englisch'],
                      'Persian': ['persian', 'Persian', 'Persisch', 'persich',
                                  'Iranian', 'iranian', 'Iranisch', 'iranisch'],
-                     'Mathematic': ['mathematic', 'Mathematic', 'mathematische', 
-                                     'Mathematische'], 
+                     'Mathematic': ['mathematic', 'Mathematic', 'mathematische',
+                                     'Mathematische'],
                      'Definitions': ['definitions', 'Definition', 'Definitionen']}
 
     try:
@@ -122,7 +124,9 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.language1 = str(language1)
         self.language2 = str(language2)
 
-        # initialize dictionary
+        self.switch = 1
+
+        # initialize pair list
         self.pair_list = list()
 
         self.make_table()
@@ -175,6 +179,9 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
 
         self.solutionLabel.setText(' ')
 
+        self.language1Button.setText('{}'.format(language1))
+        self.language2Button.setText('{}'.format(language2))
+
     def set_signals_and_slots(self):
 
         self.addVocButton.clicked.connect(self.add_button_clicked)
@@ -186,11 +193,15 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         self.continueButton.clicked.connect(self.get_next_word)
         self.continueButton.pressed.connect(self.get_next_word)
 
+        self.language1Button.clicked.connect(lambda: self.change_switch(1))
+        self.language2Button.clicked.connect(lambda: self.change_switch(2))
+        self.languageBothButton.clicked.connect(lambda: self.change_switch(0))
+
         self.howeverTrueButton.clicked.connect(lambda:
                 self.set_answer_true(self.lineEdit_1.text()))
 
         self.lineEdit_2.returnPressed.connect(lambda:
-                self.check_entry(self.lineEdit_1.text(), self.lineEdit_2.text()))
+                self.check_entry(self.lineEdit_2.text()))
 
     def load_settings(self):
         '''Loads the initial settings for the application. Sets the mainTable
@@ -212,6 +223,26 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
             self.insert_item(self.mainTable, row_inx, row)
             pair = Pair(row[1], row[2], self.language1, self.language2, row[3])
             self.pair_list.append(pair)
+
+    def change_switch(self, button):
+
+        if button == 2:
+            # default
+            self.switch = 1
+            self.language1Button.setChecked(False)
+            self.languageBothButton.setChecked(False)
+            self.language1Label.setText('{}'.format(self.language1))
+            self.language2Label.setText('{}'.format(self.language2))
+        elif button == 1:
+            self.switch = -1
+            self.language2Button.setChecked(False)
+            self.languageBothButton.setChecked(False)
+            self.language1Label.setText('{}'.format(self.language2))
+            self.language2Label.setText('{}'.format(self.language1))
+        else:
+            self.switch = 0
+            self.language1Button.setChecked(False)
+            self.language2Button.setChecked(False)
 
     def insert_item(self, table, row_inx, row):
 
@@ -293,14 +324,28 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
             self.mainTable.removeRow(currentRow)
 
     def get_next_word(self):
-        '''Chooses a word from the dictionary (keys) and writes it into the first
+        '''Chooses a word from the pair list and writes it into the first
         line edit.'''
 
-        # choose a random number to select a certain key from the dictionary
+        # choose a random number to select a certain key from the pair list
         self.current_pair = numpy.random.choice(self.pair_list)
-        text = self.current_pair.word1
 
-        # fill the first text-edit-box with a word from the dictionary
+        if self.switch == 1:
+            text = self.current_pair.word1
+        elif self.switch == -1:
+            text = self.current_pair.word2
+        elif self.switch == 0:
+            self.a = choice([-1, 1])
+            if self.a == 1:
+                text = self.current_pair.word1
+                self.language1Label.setText('{}'.format(self.language1))
+                self.language2Label.setText('{}'.format(self.language2))
+            elif self.a == -1:
+                text = self.current_pair.word2
+                self.language1Label.setText('{}'.format(self.language2))
+                self.language2Label.setText('{}'.format(self.language1))
+
+        # fill the first text-edit-box with a word from the pair list
         self.lineEdit_1.setText(text)
         self.lineEdit_2.clear()
 
@@ -313,7 +358,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
 
         return text
 
-    def correct_answer_given(self, word2, word1):
+    def correct_answer_given(self):
         '''Handles all the stuff which needs to be done if the answer was
         correct'''
 
@@ -330,24 +375,24 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
 
         self.get_next_word()
 
-    def check_entry(self, word1, word2):
-        '''Returns True if the word1 and word2 are a key-value-pair and False
+    def check_entry(self, guess):
+        '''Returns True if the correct_word and guess belong to the same pair and False
         if not.'''
 
-        # extract correct word from the list in dictionary according to
-        # first line edit -- second language -- correct word
-        word1 = str(word1)
-        word1 = word1.strip('\t')
         # the word in second line edit -- second language -- tested word
-        word2 = str(word2)
+        guess = str(guess)
 
-        print(word1, word2)
+        if self.switch == 1 or (self.switch == 0 and self.a == 1):
+            correct_word = self.current_pair.word2
+        elif self.switch == -1 or (self.switch == 0 and self.a == -1):
+            correct_word = self.current_pair.word1
 
-        if self.current_pair.word2 == word2:
+
+        if correct_word == guess:
             # correct answer
             print (True)
             self.assertionLabel.setText("Correct!")
-            self.correct_answer_given(word2, word1)
+            self.correct_answer_given()
             return True
         else:
             # incorrect answer
@@ -360,7 +405,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
 
     def import_data(self):
         '''
-        Imports whole vocabulary from txt file into dictionary.
+        Imports whole vocabulary from txt file into pair list.
 
         Column 1: First Language
         Column 2: Second Language
@@ -412,7 +457,7 @@ class Main(QMainWindow, pymainWindow.Ui_MainWindow):
         print(pair)
 
         self.assertionLabel.setText(" ")
-        self.correct_answer_given(pair)
+        self.correct_answer_given()
         return True
 
 
